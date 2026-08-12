@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-label="Shopify no shipping rates available">
+  <rect width="960" height="560" fill="#f1f1f1"/>
+  <rect width="220" height="560" fill="#1a1a1a"/>
+  <text x="28" y="40" fill="#95bf47" font-family="Arial, sans-serif" font-size="18" font-weight="700">S  mystore</text>
+  <g fill="#d2d5d9" font-family="Arial, sans-serif" font-size="14">
+    <text x="28" y="88">Home</text>
+    <text x="28" y="118">Orders</text>
+    <text x="28" y="148">Products</text>
+    <text x="28" y="238" fill="#ffffff" font-weight="700">Settings</text>
+  </g>
+  <rect x="220" width="740" height="56" fill="#ffffff"/>
+  <text x="244" y="36" fill="#202223" font-family="Arial, sans-serif" font-size="18" font-weight="700">Settings / Shipping and delivery</text>
+  <rect x="244" y="80" width="692" height="56" rx="8" fill="#fbeae5" stroke="#e0b3a3"/>
+  <text x="264" y="114" fill="#7a1f12" font-family="Arial, sans-serif" font-size="16" font-weight="700">There are no shipping rates available for this address</text>
+  <rect x="244" y="154" width="692" height="370" rx="10" fill="#ffffff"/>
+  <text x="268" y="190" fill="#202223" font-family="Arial, sans-serif" font-size="20" font-weight="700">General profile</text>
+  <text x="268" y="220" fill="#6d7175" font-family="Arial, sans-serif" font-size="13">Checkout test  Toronto ON Canada</text>
+  <text x="268" y="258" fill="#202223" font-family="Arial, sans-serif" font-size="15" font-weight="700">Zones</text>
+  <text x="268" y="290" fill="#202223" font-family="Arial, sans-serif" font-size="14">Domestic  Canada</text>
+  <text x="268" y="318" fill="#bf0711" font-family="Arial, sans-serif" font-size="14">United States  Not in any zone</text>
+  <text x="268" y="346" fill="#6d7175" font-family="Arial, sans-serif" font-size="14">Rest of world  No rates</text>
+  <rect x="268" y="372" width="110" height="34" rx="6" fill="#008060"/>
+  <text x="290" y="394" fill="#ffffff" font-family="Arial, sans-serif" font-size="13" font-weight="700">Add rate</text>
+  <text x="268" y="440" fill="#6d7175" font-family="Arial, sans-serif" font-size="13">Carrier-calculated rates  Canada Post  Account disconnected</text>
+</svg>

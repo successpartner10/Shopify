@@ -1,0 +1,326 @@
+[
+  {
+    "id": "shipping-no-methods-001",
+    "category": "shipping",
+    "match_phrases": ["there are no shipping rates available", "no shipping methods available", "shipping isn't available", "no shipping rates", "doesn't ship to this address"],
+    "tags": ["rates", "zones", "checkout", "methods"],
+    "synonyms": ["customer can't choose shipping", "checkout stuck on shipping", "no rates at checkout"],
+    "explanation": "Checkout found zero rates for that address. Almost always a missing country in a shipping zone, a weight/price condition the cart does not meet, or a carrier account that returned nothing.",
+    "steps": [
+      "Reproduce it: create an order or use a draft order with the customer's city, country, and postal code.",
+      "Go to Settings → Shipping and delivery → Shipping → Manage rates.",
+      "Open every profile and confirm the customer's country sits in exactly one zone with at least one rate.",
+      "Add a fallback flat rate (for example \"Standard · any weight\") so a carrier API failure cannot zero out checkout.",
+      "If you use carrier-calculated rates, open the carrier account and confirm the API credentials are still valid."
+    ],
+    "target_ui_hint": "Settings > Shipping and delivery > Rates",
+    "arrow": { "x": 0.72, "y": 0.36 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-zone-overlap-002",
+    "category": "shipping",
+    "match_phrases": ["shipping zone", "zone already includes", "overlapping zones", "duplicate zone", "this country is already in a zone"],
+    "tags": ["zones", "overlap", "profiles"],
+    "synonyms": ["country in two zones", "wrong rate for US"],
+    "explanation": "A country or region can only live in one zone per shipping profile. Overlaps make Shopify pick an unexpected rate or show none.",
+    "steps": [
+      "Settings → Shipping and delivery → Manage rates.",
+      "Expand each zone and write down which countries it contains.",
+      "If the United States (or another country) appears twice, remove it from the wrong zone.",
+      "Use Rest of world only as a true catch-all — not in addition to every country listed elsewhere.",
+      "Save and retest checkout with that country's address."
+    ],
+    "target_ui_hint": "Settings > Shipping and delivery > Zones",
+    "arrow": { "x": 0.4, "y": 0.42 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-profile-conflict-003",
+    "category": "shipping",
+    "match_phrases": ["shipping profile", "new profile", "products in this profile", "general profile", "split shipment"],
+    "tags": ["profiles", "products", "split"],
+    "synonyms": ["oversized items need different rates", "two shipping prices at checkout"],
+    "explanation": "Products in a custom shipping profile do not use the General profile rates. If that custom profile has no zone for the customer, checkout shows no rates — even when General is fully set up.",
+    "steps": [
+      "Settings → Shipping and delivery → Shipping profiles.",
+      "Open each custom profile and check its product list and zones.",
+      "Add the missing country/rate to the custom profile, or move the product back to the General profile.",
+      "Remember: items from two profiles create a split shipment and the customer pays both rates.",
+      "Test with a cart that contains only the problem product, then a mixed cart."
+    ],
+    "target_ui_hint": "Settings > Shipping and delivery > Profiles",
+    "arrow": { "x": 0.55, "y": 0.28 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-carrier-api-004",
+    "category": "shipping",
+    "match_phrases": ["carrier-calculated", "canada post", "ups", "fedex", "usps", "calculate rates", "carrier account disconnected"],
+    "tags": ["carrier", "api", "calculated"],
+    "synonyms": ["live rates blank", "ups not returning prices"],
+    "explanation": "Live carrier rates fail silently. Expired credentials, an unpaid carrier account, or a package with no weight returns \"no shipping methods\" instead of a useful error.",
+    "steps": [
+      "Settings → Shipping and delivery → Couriers (or Carrier accounts).",
+      "Reconnect the carrier. Paste new API keys from the carrier dashboard.",
+      "Every product in the cart needs a weight. Open Products and fill in weight + package dimensions.",
+      "Settings → Shipping and delivery → Packages: define a default package size the carrier will accept.",
+      "Keep a flat-rate backup in the same zone so checkout never goes empty if the carrier API times out."
+    ],
+    "target_ui_hint": "Settings > Shipping and delivery > Carriers",
+    "arrow": { "x": 0.68, "y": 0.52 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-weight-missing-005",
+    "category": "shipping",
+    "match_phrases": ["weight", "0.0 kg", "0 lb", "item weight", "based on weight"],
+    "tags": ["weight", "rates", "products"],
+    "synonyms": ["weight-based rates not showing", "product has no weight"],
+    "explanation": "Weight-based rates skip a cart when items have zero weight, or when the total weight falls between brackets you never created.",
+    "steps": [
+      "Open the product → Shipping and confirm Weight is greater than 0 and This is a physical product is checked.",
+      "Settings → Shipping and delivery → the zone's rates. Look at each weight range (for example 0–1 kg, 1–5 kg).",
+      "Add a rate that covers 0 weight and a catch-all \"and up\" bracket.",
+      "If you sell digital goods, uncheck This is a physical product so they do not require shipping.",
+      "Retest with the exact product that failed."
+    ],
+    "target_ui_hint": "Products > Shipping > Weight",
+    "arrow": { "x": 0.35, "y": 0.62 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-local-delivery-006",
+    "category": "shipping",
+    "match_phrases": ["local delivery", "delivery radius", "postal codes", "local delivery isn't available"],
+    "tags": ["local", "delivery", "radius"],
+    "synonyms": ["can't offer same-day delivery", "postal code not in range"],
+    "explanation": "Local delivery only appears when the customer's postal code is inside the location's delivery zone and the cart meets the min/max order rules.",
+    "steps": [
+      "Settings → Shipping and delivery → Local delivery.",
+      "Enable local delivery on the correct location (the one that actually holds the inventory).",
+      "Add postal codes or a delivery radius that includes the customer. Watch for ZIP+4 vs 5-digit mismatches.",
+      "Check the minimum order amount — a $40 minimum will hide delivery on a $25 cart.",
+      "The customer must choose a shipping address in that area; a billing-only address will not unlock delivery."
+    ],
+    "target_ui_hint": "Settings > Shipping and delivery > Local delivery",
+    "arrow": { "x": 0.6, "y": 0.58 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-pickup-007",
+    "category": "shipping",
+    "match_phrases": ["local pickup", "store pickup", "ready for pickup", "pickup location"],
+    "tags": ["pickup", "pos", "locations"],
+    "synonyms": ["customers can't pick up in store", "pickup option missing"],
+    "explanation": "Pickup only shows when it is enabled on a location that stocks the item and is set as a fulfillment location for that product.",
+    "steps": [
+      "Settings → Shipping and delivery → Local pickup → enable it on the store location.",
+      "Settings → Locations: the location must be active and used to fulfill online orders.",
+      "The product must have available inventory at that pickup location (not only at a warehouse across the country).",
+      "Write pickup instructions (door, hours). Customers see them after checkout.",
+      "Test with a customer address near the store — some themes hide pickup when expected."
+    ],
+    "target_ui_hint": "Settings > Shipping and delivery > Local pickup",
+    "arrow": { "x": 0.58, "y": 0.66 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-free-conditions-008",
+    "category": "shipping",
+    "match_phrases": ["free shipping", "free shipping over", "shipping is free", "free rate"],
+    "tags": ["free", "discount", "threshold"],
+    "synonyms": ["free shipping not applying", "customers charged when it should be free"],
+    "explanation": "Free shipping can come from a rate, a discount code, or an automatic discount. Conditions (min subtotal, specific products, logged-in customers) often block it.",
+    "steps": [
+      "Decide which mechanism you meant to use: a $0 rate in a zone, or a discount in Shopify admin → Discounts.",
+      "If it is a rate: open the zone and check the min price / weight. A \"free over $50\" rate will not appear on a $49 cart — add a paid rate below that.",
+      "If it is a discount: confirm it is Active, not expired, and applies to the customer's products and country.",
+      "App discounts and Shopify discounts can conflict. Disable extras and retest.",
+      "Preview checkout at $49 and $51 to see both sides of the threshold."
+    ],
+    "target_ui_hint": "Settings > Shipping and delivery > Free rate",
+    "arrow": { "x": 0.5, "y": 0.4 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-location-fulfill-009",
+    "category": "shipping",
+    "match_phrases": ["fulfillment location", "inventory location", "no inventory location found", "can't fulfill from"],
+    "tags": ["locations", "inventory", "fulfill"],
+    "synonyms": ["warehouse won't ship there", "wrong location fulfilling"],
+    "explanation": "Shopify assigned the order to a location that does not ship to the customer's zone, or the product's inventory is at a location with no matching rates.",
+    "steps": [
+      "Settings → Locations and open each location. Note which ones fulfill online orders.",
+      "Settings → Shipping and delivery: each profile can use different location groups. Confirm the stocking location is in the group that has rates for the customer.",
+      "Products → the product → Inventory: stock should exist at a location that can ship there.",
+      "If you use apps to split locations, disable them briefly to see if rates return.",
+      "Place a test order and check which location Shopify assigned under the order's fulfillment card."
+    ],
+    "target_ui_hint": "Settings > Locations",
+    "arrow": { "x": 0.2, "y": 0.48 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-label-purchase-010",
+    "category": "shipping",
+    "match_phrases": ["buy shipping label", "can't purchase label", "shipping label", "label purchase failed", "shopify shipping"],
+    "tags": ["labels", "shopify shipping", "fulfill"],
+    "synonyms": ["can't print postage", "label error at fulfill"],
+    "explanation": "Buying a Shopify Shipping label fails when the address is unverified, the package is missing dimensions, or the store's shipping billing method is invalid.",
+    "steps": [
+      "Open the order → Fulfill item → check the destination address. Fix any failed address verification.",
+      "Enter package weight and dimensions. Use a saved package under Settings → Shipping and delivery → Packages.",
+      "Settings → Shipping and delivery → Shipping labels: confirm a valid card is on file for postage (this is separate from Shopify Payments payouts).",
+      "If a carrier service is down, pick another service level (for example USPS Ground Advantage instead of Priority).",
+      "International labels also need HS codes and a customs form on the product."
+    ],
+    "target_ui_hint": "Orders > Fulfill > Buy label",
+    "arrow": { "x": 0.8, "y": 0.3 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-international-011",
+    "category": "shipping",
+    "match_phrases": ["international shipping", "customs", "duties", "hs code", "delivered duties paid", "not shipping internationally"],
+    "tags": ["international", "duties", "customs"],
+    "synonyms": ["overseas checkout blocked", "need to collect duties"],
+    "explanation": "International checkout fails when the country is not in a zone, duties are misconfigured, or products lack customs data.",
+    "steps": [
+      "Settings → Shipping and delivery: add the country to a zone with a real rate (or a Rest of world rate).",
+      "Settings → Taxes and duties: decide whether you collect duties at checkout (DDP) or let the carrier collect on delivery (DDU).",
+      "Each product needs a country of origin and an HS code under Product → Shipping.",
+      "Markets: the international market must be published and include that country.",
+      "Test with a non-domestic address and a product that has customs fields filled."
+    ],
+    "target_ui_hint": "Settings > Shipping and delivery > International",
+    "arrow": { "x": 0.58, "y": 0.34 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-delivery-profile-app-012",
+    "category": "shipping",
+    "match_phrases": ["third-party shipping app", "shipping rate app", "custom shipping rates", "delivery customizations"],
+    "tags": ["apps", "functions", "rates"],
+    "synonyms": ["shipping app broke checkout", "rates disappeared after installing app"],
+    "explanation": "Checkout UI extensions and shipping apps can hide or replace Shopify rates. A buggy app often presents as \"no methods available.\"",
+    "steps": [
+      "Settings → Apps and sales channels. Disable shipping, delivery, or checkout apps one at a time.",
+      "After each disable, retest checkout with the same address.",
+      "Settings → Checkout → Customize: look for delivery customizations and turn them off to isolate the issue.",
+      "Once you find the app, update it or contact its developer — do not leave checkout broken while you wait.",
+      "Keep native Shopify rates as a fallback even when an app is the primary calculator."
+    ],
+    "target_ui_hint": "Settings > Apps > Shipping apps",
+    "arrow": { "x": 0.2, "y": 0.36 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-subscription-013",
+    "category": "shipping",
+    "match_phrases": ["subscription shipping", "recurring delivery", "delivery every", "selling plans"],
+    "tags": ["subscriptions", "plans", "recurring"],
+    "synonyms": ["subscribe and save has no shipping", "recurring order shipping failed"],
+    "explanation": "Selling plans use the same zones as one-time orders unless a subscription app injects its own rates. Missing customer addresses on recurring orders also blank out rates.",
+    "steps": [
+      "Confirm a normal one-time checkout still shows rates. If not, fix zones first.",
+      "Open the subscription app and check its shipping settings — some require their own rate table.",
+      "On the customer profile, confirm the shipping address is still valid (expired apartments are common).",
+      "Make sure subscription products are in a profile that covers that country.",
+      "For a failed recurring order, update the address and retry billing from the subscription contract."
+    ],
+    "target_ui_hint": "Settings > Shipping and delivery > Subscriptions",
+    "arrow": { "x": 0.48, "y": 0.44 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-po-box-014",
+    "category": "shipping",
+    "match_phrases": ["po box", "p.o. box", "apo", "fpo", "cannot ship to po boxes"],
+    "tags": ["pobox", "address", "carrier"],
+    "synonyms": ["ups won't deliver to po box", "military address failed"],
+    "explanation": "UPS and FedEx generally will not deliver to PO Boxes or APO/FPO addresses. If those are your only rates, checkout shows nothing.",
+    "steps": [
+      "Add a USPS (or national postal) rate in the same zone as a fallback — postal services accept PO Boxes.",
+      "In the shipping app or carrier settings, allow USPS for residential / PO Box addresses.",
+      "Optionally add checkout helper text: \"Use a street address for courier delivery.\"",
+      "APO/FPO should be treated as US addresses with USPS, not international.",
+      "Retest with a PO Box address and a street address."
+    ],
+    "target_ui_hint": "Settings > Shipping and delivery > Carrier restrictions",
+    "arrow": { "x": 0.62, "y": 0.48 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-checkout-language-015",
+    "category": "shipping",
+    "match_phrases": ["shipping method name", "delivery method", "translated shipping", "untranslated"],
+    "tags": ["translation", "checkout", "markets"],
+    "synonyms": ["shipping name in english only", "customers confused by rate name"],
+    "explanation": "A missing translation does not hide the rate, but a delivery customization that expects a translated handle can drop it.",
+    "steps": [
+      "Settings → Languages (or Markets → languages) and translate each shipping rate name.",
+      "Keep the same meaning — checkout apps often match on the English handle.",
+      "If a rate vanished only in one language, disable delivery customizations and retest.",
+      "Save, then preview checkout in that language from the Markets preview.",
+      "Avoid renaming rates in a live store without updating the translations at the same time."
+    ],
+    "target_ui_hint": "Settings > Languages > Shipping rates",
+    "arrow": { "x": 0.44, "y": 0.3 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-draft-order-016",
+    "category": "shipping",
+    "match_phrases": ["add shipping", "custom shipping rate", "draft order shipping", "shipping is not required"],
+    "tags": ["draft", "custom rate", "staff"],
+    "synonyms": ["invoice has no shipping", "can't add postage to draft"],
+    "explanation": "Draft orders do not auto-apply store rates unless you click Add shipping. Marking an order as Shipping not required will skip rates entirely.",
+    "steps": [
+      "Open the draft order and confirm the shipping address is filled.",
+      "Click Add shipping and choose a calculated rate, or enter a custom amount.",
+      "If the product is physical, do not check Shipping not required.",
+      "Taxes on shipping are controlled under Settings → Taxes and duties.",
+      "Send the invoice only after the shipping line is present so the customer is not undercharged."
+    ],
+    "target_ui_hint": "Orders > Drafts > Add shipping",
+    "arrow": { "x": 0.78, "y": 0.5 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-delivery-date-017",
+    "category": "shipping",
+    "match_phrases": ["delivery date", "estimated delivery", "transit time", "business days"],
+    "tags": ["eta", "transit", "promise"],
+    "synonyms": ["wrong delivery estimate", "shipping says 3 days but takes 10"],
+    "explanation": "The estimate comes from the rate's transit time plus the location's cutoff and processing time. An empty transit time hides the promise or shows a wild range.",
+    "steps": [
+      "Settings → Shipping and delivery → the rate → add a transit time (for example 3–5 business days).",
+      "Set order processing time on the location (same page, at the top of the profile).",
+      "Enable delivery dates at checkout if you want a calendar instead of a range.",
+      "Carrier-calculated rates bring their own ETAs — do not also hardcode a conflicting range.",
+      "Remember weekends and the cutoff hour (orders after 2pm often start the next business day)."
+    ],
+    "target_ui_hint": "Settings > Shipping and delivery > Transit time",
+    "arrow": { "x": 0.66, "y": 0.4 },
+    "source_category_db": "shipping"
+  },
+  {
+    "id": "shipping-digital-physical-018",
+    "category": "shipping",
+    "match_phrases": ["this is a physical product", "requires shipping", "digital product", "no shipping required"],
+    "tags": ["digital", "physical", "product"],
+    "synonyms": ["ebook asking for shipping", "physical product skipped shipping"],
+    "explanation": "The product checkbox This is a physical product controls whether checkout asks for a shipping address. The wrong value either blocks digital customers or lets physical orders skip postage.",
+    "steps": [
+      "Open the product → Shipping section.",
+      "Physical goods: check This is a physical product and enter a weight.",
+      "Digital goods, services, and gift cards: uncheck it.",
+      "For mixed bundles, use a bundle app or separate line items so each item follows the right rule.",
+      "Save and run checkout — digital-only carts should jump from information to payment."
+    ],
+    "target_ui_hint": "Products > Shipping > Physical product",
+    "arrow": { "x": 0.32, "y": 0.58 },
+    "source_category_db": "shipping"
+  }
+]

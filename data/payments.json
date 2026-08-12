@@ -1,0 +1,326 @@
+[
+  {
+    "id": "payments-payout-hold-001",
+    "category": "payments",
+    "match_phrases": ["payouts are temporarily on hold", "payout on hold", "payouts on hold", "your payouts are on hold", "payout delayed", "funds on hold"],
+    "tags": ["payout", "hold", "delay", "bank", "chargeback", "review"],
+    "synonyms": ["deposit stuck", "money not arrived", "payment frozen", "can't withdraw", "shopify holding my money", "why is my money stuck", "money stuck"],
+    "explanation": "Shopify pauses payouts when it needs to verify your account, bank details, or review recent chargebacks. Your customers can still check out — you just cannot receive the transfer yet.",
+    "steps": [
+      "Read the yellow or red banner at the top of Shopify admin — it usually names the exact reason.",
+      "Check the store owner's email (and spam) for a request from Shopify Payments.",
+      "Go to Settings → Payments → Shopify Payments → View payouts and confirm the hold reason.",
+      "Open Settings → Payments and confirm the bank account name, transit, and account numbers match your bank exactly.",
+      "If chargebacks made your balance negative, resolve open disputes first. Payouts resume once the balance is no longer negative."
+    ],
+    "target_ui_hint": "Settings > Payments > Payouts",
+    "arrow": { "x": 0.62, "y": 0.14 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-provider-not-connected-002",
+    "category": "payments",
+    "match_phrases": ["payment provider not connected", "this store is currently unable to accept payments", "this store can't accept payments", "no payment provider", "activate shopify payments"],
+    "tags": ["gateway", "provider", "checkout", "setup"],
+    "synonyms": ["can't take cards", "checkout has no payment", "payments not set up"],
+    "explanation": "Checkout has no active primary payment provider. Extra methods like PayPal Express do not replace a card gateway — customers will see that the store cannot accept payments.",
+    "steps": [
+      "Go to Settings → Payments.",
+      "If Shopify Payments is available in your country, click Complete account setup and finish identity verification.",
+      "If Shopify Payments is not available, click Choose third-party provider and add Stripe, PayPal Payments Complete, or another primary gateway.",
+      "Confirm the provider status reads Active — not Draft, Test, or Incomplete.",
+      "Place a test order (or use Bogus Gateway on a development store) to confirm the Pay now button works."
+    ],
+    "target_ui_hint": "Settings > Payments > Add provider",
+    "arrow": { "x": 0.78, "y": 0.42 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-test-mode-003",
+    "category": "payments",
+    "match_phrases": ["test mode", "bogus gateway", "gateway in test mode", "enable test mode", "using test mode"],
+    "tags": ["test", "gateway", "live", "checkout"],
+    "synonyms": ["real cards not working", "only test cards work", "payments in sandbox"],
+    "explanation": "Test mode (or Bogus Gateway) accepts fake cards only. Live customers will be declined until you switch the provider to production credentials.",
+    "steps": [
+      "Go to Settings → Payments.",
+      "Open your credit-card provider and check for a Test mode toggle.",
+      "Turn Test mode off. Save.",
+      "If you use a third-party gateway, replace test API keys with live keys from that provider's dashboard.",
+      "Run a small real transaction and refund it to confirm live charges work."
+    ],
+    "target_ui_hint": "Settings > Payments > Manage > Test mode",
+    "arrow": { "x": 0.72, "y": 0.56 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-bank-mismatch-004",
+    "category": "payments",
+    "match_phrases": ["bank account couldn't be verified", "bank details don't match", "invalid bank account", "update your bank account", "payout account rejected"],
+    "tags": ["bank", "payout", "verification", "routing"],
+    "synonyms": ["wrong routing number", "bank rejected deposit", "change payout bank"],
+    "explanation": "Shopify could not match the payout account to the legal business name on file. A single character mismatch (Inc. vs Ltd., nickname vs legal name) is enough to reject the account.",
+    "steps": [
+      "Open Settings → Payments → Shopify Payments → Manage.",
+      "Click Edit next to the payout bank account.",
+      "Copy the account holder name, transit/routing, and account number from a bank statement — do not type from memory.",
+      "The name must match the legal business name on your Shopify Payments account, not a DBA or personal nickname.",
+      "Save and wait for micro-deposit or instant verification. Payouts stay held until the bank verifies."
+    ],
+    "target_ui_hint": "Settings > Payments > Bank account",
+    "arrow": { "x": 0.58, "y": 0.48 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-chargeback-005",
+    "category": "payments",
+    "match_phrases": ["chargeback", "dispute", "respond to this dispute", "negative balance", "inquiry from the customer's bank"],
+    "tags": ["chargeback", "dispute", "balance", "payout"],
+    "synonyms": ["customer reversed payment", "bank took money back", "need to fight a dispute"],
+    "explanation": "A customer asked their bank to reverse a charge. Shopify holds that amount (plus a fee) and can pause payouts if the balance goes negative.",
+    "steps": [
+      "Go to Orders and filter by Chargebacks, or open Settings → Payments → View payouts → Disputes.",
+      "Open the dispute before the respond-by date shown — missing it means an automatic loss.",
+      "Upload proof: fulfillment receipt, tracking that shows delivered, order confirmation, and any customer messages.",
+      "Submit the response and monitor the status. Wins usually post in 60–75 days.",
+      "If the balance is negative, add a reserve or wait for new sales — payouts resume when the balance is positive."
+    ],
+    "target_ui_hint": "Orders > Chargebacks",
+    "arrow": { "x": 0.22, "y": 0.28 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-identity-verification-006",
+    "category": "payments",
+    "match_phrases": ["verify your identity", "identity verification", "submit your documents", "we need more information", "complete account setup", "information required"],
+    "tags": ["kyc", "identity", "documents", "verification"],
+    "synonyms": ["upload id", "shopify wants my passport", "account under review"],
+    "explanation": "Shopify Payments cannot finish setup (or has paused payouts) until the store owner proves who they are and that the business is real.",
+    "steps": [
+      "Sign in as the store owner — staff accounts usually cannot submit KYC documents.",
+      "Click the banner on the admin home, or go to Settings → Payments → Complete account setup.",
+      "Upload a government ID plus a matching bank statement or void cheque.",
+      "If you sell as a company, also upload articles of incorporation that match the legal name on the account.",
+      "Wait for the review (often 1–3 business days). Watch the store-owner email for follow-up questions."
+    ],
+    "target_ui_hint": "Settings > Payments > Complete account setup",
+    "arrow": { "x": 0.7, "y": 0.16 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-pending-capture-007",
+    "category": "payments",
+    "match_phrases": ["payment pending", "authorized", "capture payment", "manually capture", "payment not captured"],
+    "tags": ["capture", "pending", "authorization", "orders"],
+    "synonyms": ["order not paid yet", "need to capture funds", "authorization expired"],
+    "explanation": "The card was authorized but not captured. If your store uses manual capture, you must take the payment before the authorization expires (usually 7 days).",
+    "steps": [
+      "Open the order. If it says Authorized or Payment pending, the money is not in your account yet.",
+      "Click Capture payment and confirm the amount.",
+      "To stop doing this by hand: Settings → Payments → Manage → Payment capture → Automatically capture payment for orders.",
+      "If the authorization expired, ask the customer to place the order again or send an invoice.",
+      "Check that no fraud app is holding capture on high-risk orders."
+    ],
+    "target_ui_hint": "Orders > Capture payment",
+    "arrow": { "x": 0.82, "y": 0.22 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-paypal-008",
+    "category": "payments",
+    "match_phrases": ["paypal", "reconnect paypal", "paypal email", "paypal payments incomplete", "paypal account restricted"],
+    "tags": ["paypal", "express", "wallet"],
+    "synonyms": ["paypal button missing", "paypal not showing at checkout"],
+    "explanation": "PayPal is disconnected, restricted, or still in an incomplete onboarding state. It will not appear at checkout until the account is active and the emails match.",
+    "steps": [
+      "Go to Settings → Payments and find PayPal.",
+      "If it says Reconnect or Incomplete, click it and sign in with the business PayPal email (personal accounts are often rejected).",
+      "In PayPal, confirm the account can receive payments and is not limited.",
+      "Turn PayPal off, save, then turn it back on if the button still does not appear.",
+      "Test checkout in an incognito window. Shop Pay and Apple Pay are separate — they will not fix a PayPal outage."
+    ],
+    "target_ui_hint": "Settings > Payments > PayPal",
+    "arrow": { "x": 0.55, "y": 0.62 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-currency-mismatch-009",
+    "category": "payments",
+    "match_phrases": ["unable to process in this currency", "currency not supported", "store currency", "multi-currency", "payment method not supported"],
+    "tags": ["currency", "markets", "gateway"],
+    "synonyms": ["wrong currency at checkout", "can't charge euros", "currency conversion error"],
+    "explanation": "The store currency and the payment provider's supported currencies do not line up, or a Market is presenting a currency the gateway cannot charge.",
+    "steps": [
+      "Note the store currency under Settings → General → Store defaults.",
+      "Open Settings → Payments and confirm the provider supports that currency.",
+      "If you sell in multiple currencies, enable Shopify Payments multi-currency or Markets, and check each market's payment methods.",
+      "Do not change the store currency on a live store without a migration plan — existing product prices and reports will break.",
+      "Place a test order from the affected country using a VPN or Markets preview."
+    ],
+    "target_ui_hint": "Settings > Payments > Currencies",
+    "arrow": { "x": 0.5, "y": 0.36 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-3ds-010",
+    "category": "payments",
+    "match_phrases": ["3d secure", "3ds", "authentication failed", "additional authentication required", "card authentication"],
+    "tags": ["3ds", "sca", "europe", "authentication"],
+    "synonyms": ["bank asked for a code and it failed", "extra verification at checkout"],
+    "explanation": "The customer's bank required 3-D Secure (common in Europe). The charge was not declined for funds — authentication never finished.",
+    "steps": [
+      "Open the order or abandoned checkout. Look for Authentication failed or 3D Secure in the timeline.",
+      "Ask the customer to retry and complete the bank prompt (app approval or SMS code).",
+      "Confirm Shopify Payments or your gateway has 3DS enabled — do not turn it off in regions that require SCA.",
+      "If only one bank fails repeatedly, have the customer try another card or Shop Pay.",
+      "Check that checkout apps are not breaking the 3DS redirect popup."
+    ],
+    "target_ui_hint": "Orders > Timeline > Authentication",
+    "arrow": { "x": 0.68, "y": 0.4 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-high-decline-011",
+    "category": "payments",
+    "match_phrases": ["payment declined", "card declined", "high decline rate", "do not honor", "fraud check failed"],
+    "tags": ["decline", "fraud", "checkout"],
+    "synonyms": ["lots of failed checkouts", "customers say card works elsewhere"],
+    "explanation": "Declines can be the customer's bank, your fraud filters, or a gateway still in a review state. A sudden spike usually means settings or a provider hold — not random bad cards.",
+    "steps": [
+      "Open Analytics → Reports → Payments or the Payments dashboard and note the decline reason codes.",
+      "Go to Settings → Payments → Manage and confirm you are not in test mode and the account is not under review.",
+      "Review Settings → Payments → Fraud protect (and any third-party fraud app). Loosen rules that auto-cancel medium-risk orders.",
+      "Enable a backup method (PayPal or Shop Pay) so a card decline is not a lost sale.",
+      "If almost every card fails, contact the provider from Settings → Payments → More actions → Contact provider."
+    ],
+    "target_ui_hint": "Settings > Payments > Fraud protect",
+    "arrow": { "x": 0.74, "y": 0.5 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-shop-pay-012",
+    "category": "payments",
+    "match_phrases": ["shop pay", "shop pay isn't available", "accelerate checkout with shop pay", "shop pay installment"],
+    "tags": ["shop pay", "wallet", "checkout"],
+    "synonyms": ["purple shop button missing", "one-click checkout gone"],
+    "explanation": "Shop Pay only appears when Shopify Payments is the primary gateway and Shop Pay is toggled on. Third-party-only stores cannot offer it.",
+    "steps": [
+      "Confirm Shopify Payments is your primary provider under Settings → Payments.",
+      "On that same page, turn on Shop Pay.",
+      "Shop Pay is unavailable in some countries and on password-protected stores that block Shop domain checks.",
+      "If installments are missing, open Shop Pay → Manage and complete Shop Pay Installments onboarding.",
+      "Test in an incognito window on mobile — Shop Pay is most visible there."
+    ],
+    "target_ui_hint": "Settings > Payments > Shop Pay",
+    "arrow": { "x": 0.52, "y": 0.44 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-api-key-013",
+    "category": "payments",
+    "match_phrases": ["invalid api key", "payment authorization failed", "invalid credentials", "authentication error", "expired api"],
+    "tags": ["api", "stripe", "gateway", "credentials"],
+    "synonyms": ["stripe keys wrong", "gateway disconnected itself"],
+    "explanation": "The third-party gateway rejected Shopify's request because the API keys are wrong, restricted, or were rotated on the provider side.",
+    "steps": [
+      "Log into the provider dashboard (Stripe, Authorize.net, etc.) and confirm the account is active.",
+      "Create a fresh set of live secret and publishable keys.",
+      "In Shopify go to Settings → Payments → Manage, remove the old keys, paste the new ones, and save.",
+      "Turn off any test/sandbox toggle on both sides.",
+      "Run a $1 real charge and refund it. If it still fails, use More actions → Contact provider from that page."
+    ],
+    "target_ui_hint": "Settings > Payments > Manage credentials",
+    "arrow": { "x": 0.7, "y": 0.46 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-region-unavailable-014",
+    "category": "payments",
+    "match_phrases": ["this payment method is not available for your location", "not available in your region", "payment method unavailable"],
+    "tags": ["region", "markets", "methods"],
+    "synonyms": ["international customers can't pay", "country blocked at checkout"],
+    "explanation": "The Market or payment provider does not offer that method in the customer's country. The cart is fine — the payment method list is empty for that location.",
+    "steps": [
+      "Identify the customer's country from the abandoned checkout.",
+      "Go to Settings → Markets and open that market. Confirm it is published and has payment methods assigned.",
+      "In Settings → Payments, check which methods are restricted by country.",
+      "Add a method that works there (local cards, PayPal, or a local provider).",
+      "Preview checkout with that country selected in the order address."
+    ],
+    "target_ui_hint": "Settings > Markets > Payments",
+    "arrow": { "x": 0.48, "y": 0.32 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-apple-google-pay-015",
+    "category": "payments",
+    "match_phrases": ["apple pay", "google pay", "dynamic checkout", "buy with apple pay", "wallet pay not available"],
+    "tags": ["apple pay", "google pay", "express"],
+    "synonyms": ["apple pay button missing", "wallet checkout gone"],
+    "explanation": "Express wallets need Shopify Payments (or a compatible gateway), HTTPS on the custom domain, and the button enabled on product and cart pages.",
+    "steps": [
+      "Settings → Payments → Shopify Payments → turn on Apple Pay and Google Pay.",
+      "Online Store → Themes → Customize → Theme settings → Cart / Checkout and enable dynamic checkout buttons.",
+      "Online Store → Domains: the primary domain must show as Connected and issued a valid SSL certificate.",
+      "Apple Pay only appears in Safari (or Chrome with a saved card on supported OS versions).",
+      "If it vanished after a theme edit, restore the buy-buttons section — custom product pages often drop the wallet button."
+    ],
+    "target_ui_hint": "Settings > Payments > Wallets",
+    "arrow": { "x": 0.5, "y": 0.5 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-reserved-funds-016",
+    "category": "payments",
+    "match_phrases": ["reserve", "rolling reserve", "funds reserved", "payout amount is less"],
+    "tags": ["reserve", "payout", "risk"],
+    "synonyms": ["shopify keeping a percentage", "payout smaller than sales"],
+    "explanation": "Shopify (or the gateway) is holding a percentage of each payout as a risk reserve. New stores and stores with high refund or chargeback rates see this most often.",
+    "steps": [
+      "Open Settings → Payments → View payouts and click a payout. Look for a Reserve line item.",
+      "Read the email that announced the reserve — it includes the percentage and how long it lasts.",
+      "Keep chargebacks and refunds low, fulfill on time, and answer Shopify's information requests.",
+      "Do not open a second Shopify Payments account to dodge a reserve — that can suspend both.",
+      "If the reserve looks wrong, contact Shopify Payments support from the payouts page with the payout ID."
+    ],
+    "target_ui_hint": "Settings > Payments > Payouts > Reserve",
+    "arrow": { "x": 0.6, "y": 0.38 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-billing-subscription-017",
+    "category": "payments",
+    "match_phrases": ["shopify bill", "payment failed for your shopify invoice", "update your credit card", "frozen", "store has been frozen"],
+    "tags": ["billing", "subscription", "frozen"],
+    "synonyms": ["shopify charged my card and failed", "admin locked for billing"],
+    "explanation": "This is Shopify charging you for the plan or apps — not customer checkout. A failed Shopify invoice can freeze the admin and take the storefront offline.",
+    "steps": [
+      "Go to Settings → Billing (the store owner may be the only one who can see it).",
+      "Update the card on file and pay the outstanding invoice.",
+      "If the store is frozen, paying the invoice usually unfreezes it within a few minutes.",
+      "Check for a failed app charge that is separate from the monthly plan.",
+      "After it is current, place a test order to confirm checkout was not affected."
+    ],
+    "target_ui_hint": "Settings > Billing",
+    "arrow": { "x": 0.18, "y": 0.72 },
+    "source_category_db": "payments"
+  },
+  {
+    "id": "payments-manual-payment-018",
+    "category": "payments",
+    "match_phrases": ["manual payment methods", "cash on delivery", "bank deposit", "money order", "mark as paid"],
+    "tags": ["cod", "manual", "bank deposit"],
+    "synonyms": ["want to accept etransfer", "cod not showing"],
+    "explanation": "Manual methods create unpaid orders that you mark as paid later. They never charge a card automatically and will not replace a real gateway.",
+    "steps": [
+      "Settings → Payments → Manual payment methods → Add manual payment method.",
+      "Choose Cash on Delivery, Bank deposit, or Custom, and write clear instructions the customer will see.",
+      "Save. Manual methods appear below card options at checkout.",
+      "When the money actually arrives, open the order and click Mark as paid.",
+      "Do not rely on COD alone if you also need Shopify Payments features like Shop Pay."
+    ],
+    "target_ui_hint": "Settings > Payments > Manual payment methods",
+    "arrow": { "x": 0.55, "y": 0.78 },
+    "source_category_db": "payments"
+  }
+]

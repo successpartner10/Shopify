@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-label="Shopify payments payouts on hold">
+  <rect width="960" height="560" fill="#f1f1f1"/>
+  <rect width="220" height="560" fill="#1a1a1a"/>
+  <text x="28" y="40" fill="#95bf47" font-family="Arial, sans-serif" font-size="18" font-weight="700">S  mystore</text>
+  <g fill="#d2d5d9" font-family="Arial, sans-serif" font-size="14">
+    <text x="28" y="88">Home</text>
+    <text x="28" y="118">Orders</text>
+    <text x="28" y="148">Products</text>
+    <text x="28" y="178">Customers</text>
+    <text x="28" y="208">Finance</text>
+    <text x="28" y="238" fill="#ffffff" font-weight="700">Settings</text>
+  </g>
+  <rect x="220" width="740" height="56" fill="#ffffff"/>
+  <text x="244" y="36" fill="#202223" font-family="Arial, sans-serif" font-size="18" font-weight="700">Settings / Payments</text>
+  <rect x="244" y="80" width="692" height="64" rx="8" fill="#fff5d7" stroke="#e1b878"/>
+  <text x="264" y="108" fill="#5c4300" font-family="Arial, sans-serif" font-size="16" font-weight="700">Your payouts are temporarily on hold</text>
+  <text x="264" y="128" fill="#5c4300" font-family="Arial, sans-serif" font-size="13">We need more information to verify your account. Check the store owner's email.</text>
+  <rect x="244" y="164" width="692" height="360" rx="10" fill="#ffffff"/>
+  <text x="268" y="200" fill="#202223" font-family="Arial, sans-serif" font-size="20" font-weight="700">Shopify Payments</text>
+  <rect x="268" y="224" width="210" height="36" rx="6" fill="#008060"/>
+  <text x="286" y="247" fill="#ffffff" font-family="Arial, sans-serif" font-size="13" font-weight="700">Complete account setup</text>
+  <text x="268" y="292" fill="#6d7175" font-family="Arial, sans-serif" font-size="13">Bank account   •••• 4421   Needs attention</text>
+  <text x="268" y="322" fill="#202223" font-family="Arial, sans-serif" font-size="15">Next payout   $1,284.60   On hold</text>
+  <text x="268" y="362" fill="#6d7175" font-family="Arial, sans-serif" font-size="13">Jul 30  $942.18  Paid</text>
+  <text x="268" y="386" fill="#6d7175" font-family="Arial, sans-serif" font-size="13">Jul 23  $1,104.02  Paid</text>
+</svg>

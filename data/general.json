@@ -1,0 +1,218 @@
+[
+  {
+    "id": "general-domain-not-verified-001",
+    "category": "general",
+    "match_phrases": ["domain not verified", "verify connection", "dns records", "domain is not connected", "pointing to shopify"],
+    "tags": ["domain", "dns", "ssl"],
+    "synonyms": ["custom domain not working", "www not connecting"],
+    "explanation": "Shopify cannot see the DNS records that should point your domain at the store. Until they verify, SSL will not issue and checkout on that domain can fail.",
+    "steps": [
+      "Online Store → Domains and click the domain that shows an error.",
+      "If Shopify hosts the domain, click Verify connection and wait up to 24 hours.",
+      "If a third party hosts it, set the A record to 23.227.38.65 and the www CNAME to shops.myshopify.com.",
+      "Remove old AAAA or conflicting CNAME records. Extra records are the usual reason verification stalls.",
+      "Once Connected, set it as the primary domain so SSL can finish issuing."
+    ],
+    "target_ui_hint": "Online Store > Domains",
+    "arrow": { "x": 0.55, "y": 0.3 },
+    "source_category_db": "general"
+  },
+  {
+    "id": "general-theme-errors-002",
+    "category": "general",
+    "match_phrases": ["theme has errors", "liquid syntax error", "online store editor", "failed to save theme"],
+    "tags": ["theme", "liquid", "editor"],
+    "synonyms": ["storefront broken after edit", "theme code red error"],
+    "explanation": "A Liquid or JSON template error is blocking the editor or the live storefront. Shopify usually names the file in the banner.",
+    "steps": [
+      "Online Store → Themes → the red error count. Click it to open the first broken file.",
+      "Read the line number. Typical causes: a missing {% endif %}, a deleted section still referenced in JSON, or a typo in a filter.",
+      "If you cannot fix it quickly, Actions → Duplicate the live theme, then roll back the broken file from older versions (each file has a version history).",
+      "Disable recently installed theme-app extensions if the error appeared after an app install.",
+      "Preview the theme on a product, collection, and cart page before publishing again."
+    ],
+    "target_ui_hint": "Online Store > Themes > Errors",
+    "arrow": { "x": 0.72, "y": 0.22 },
+    "source_category_db": "general"
+  },
+  {
+    "id": "general-tax-003",
+    "category": "general",
+    "match_phrases": ["tax registration", "collect tax", "vat", "sales tax", "tax override", "shopify tax"],
+    "tags": ["tax", "vat", "duties"],
+    "synonyms": ["tax not charging", "wrong tax at checkout"],
+    "explanation": "Taxes only calculate when a registration exists for that region and the product is not marked tax-exempt.",
+    "steps": [
+      "Settings → Taxes and duties.",
+      "Add a tax registration for every region where you have nexus or a VAT number.",
+      "Open a product and confirm Charge tax is enabled unless it is legally exempt.",
+      "If you use Shopify Tax, let it manage rates. Manual overrides on a country will fight it.",
+      "Test checkout with an address in that region and compare the tax line to your registration."
+    ],
+    "target_ui_hint": "Settings > Taxes and duties",
+    "arrow": { "x": 0.2, "y": 0.64 },
+    "source_category_db": "general"
+  },
+  {
+    "id": "general-checkout-settings-004",
+    "category": "general",
+    "match_phrases": ["customer accounts", "require account", "checkout language", "tipping", "checkout customization"],
+    "tags": ["checkout", "accounts", "settings"],
+    "synonyms": ["force login at checkout", "tips not showing"],
+    "explanation": "Checkout behavior is controlled in Settings → Checkout, not in the theme. Theme edits will not change account requirements or tipping.",
+    "steps": [
+      "Settings → Checkout.",
+      "Customer accounts: choose Optional unless you truly need a login — requiring accounts increases abandonment.",
+      "Tipping, email marketing opt-in, and form fields are on this same page.",
+      "Checkout language / editor is under Settings → Checkout → Customize.",
+      "After changes, test in an incognito window so a logged-in staff session does not hide the real flow."
+    ],
+    "target_ui_hint": "Settings > Checkout",
+    "arrow": { "x": 0.2, "y": 0.58 },
+    "source_category_db": "general"
+  },
+  {
+    "id": "general-product-inventory-005",
+    "category": "general",
+    "match_phrases": ["out of stock", "inventory policy", "continue selling when out of stock", "sku", "barcode"],
+    "tags": ["inventory", "product", "stock"],
+    "synonyms": ["product not buyable", "sold out but I have stock"],
+    "explanation": "The product is hidden from purchase because inventory tracking hit zero, the variant is not published, or stock sits at a location that does not fulfill online.",
+    "steps": [
+      "Open the product → Variants → Inventory. Add stock to a location that fulfills online orders.",
+      "If you want preorders, check Continue selling when out of stock.",
+      "Confirm the product is available on the Online Store sales channel.",
+      "A draft or archived product will not appear on the storefront even with stock.",
+      "If only one variant fails, check that variant's inventory — not the parent product."
+    ],
+    "target_ui_hint": "Products > Inventory",
+    "arrow": { "x": 0.48, "y": 0.42 },
+    "source_category_db": "general"
+  },
+  {
+    "id": "general-app-conflict-006",
+    "category": "general",
+    "match_phrases": ["app error", "uninstall app", "theme app extension", "script conflict", "checkout extension"],
+    "tags": ["apps", "conflict", "extensions"],
+    "synonyms": ["store broke after installing app", "two apps fighting"],
+    "explanation": "Two apps injecting into the same cart, checkout, or product page is one of the most common \"mystery\" breakages.",
+    "steps": [
+      "List apps installed in the last 7 days. Those are the first suspects.",
+      "Disable theme app embeds: Online Store → Themes → Customize → App embeds.",
+      "If checkout broke, disable checkout and thank-you extensions under Settings → Checkout → Customize.",
+      "Retest after each change. When the store recovers, leave that app off and contact its support.",
+      "Avoid two apps that both do reviews, upsells, or shipping — pick one."
+    ],
+    "target_ui_hint": "Settings > Apps and sales channels",
+    "arrow": { "x": 0.18, "y": 0.4 },
+    "source_category_db": "general"
+  },
+  {
+    "id": "general-password-page-007",
+    "category": "general",
+    "match_phrases": ["password page", "online store is password protected", "remove password", "coming soon"],
+    "tags": ["password", "launch", "storefront"],
+    "synonyms": ["store looks closed", "visitors see password"],
+    "explanation": "The storefront is still behind Shopify's password page. That is not a DNS or theme bug.",
+    "steps": [
+      "Online Store → Preferences (or Themes → the password banner).",
+      "Uncheck Restrict access to visitors with the password.",
+      "Save. Open the store URL in an incognito window to confirm the real homepage loads.",
+      "If you still see a coming-soon page, that is a theme template — publish your live theme.",
+      "Search engines will not index a password-protected store."
+    ],
+    "target_ui_hint": "Online Store > Preferences > Password",
+    "arrow": { "x": 0.6, "y": 0.36 },
+    "source_category_db": "general"
+  },
+  {
+    "id": "general-staff-permissions-008",
+    "category": "general",
+    "match_phrases": ["permission", "you don't have permission", "staff account", "two-step authentication"],
+    "tags": ["staff", "permissions", "2fa"],
+    "synonyms": ["va can't see payments", "locked out of settings"],
+    "explanation": "Staff accounts only see what the store owner granted. Payments, billing, and domains are often hidden on purpose.",
+    "steps": [
+      "The store owner goes to Settings → Users and permissions.",
+      "Open the staff member and enable the missing permissions (Settings, Finances, Apps, etc.).",
+      "If 2FA is required and the staff member lost their device, the owner can reset two-step authentication there.",
+      "Collaborator accounts requested from an agency need the owner to approve a collaborator request email.",
+      "Owners who are locked out must use Shopify's account recovery — staff cannot reset the owner."
+    ],
+    "target_ui_hint": "Settings > Users and permissions",
+    "arrow": { "x": 0.2, "y": 0.78 },
+    "source_category_db": "general"
+  },
+  {
+    "id": "general-email-deliverability-009",
+    "category": "general",
+    "match_phrases": ["notification email", "spf", "dkim", "sender email", "emails going to spam"],
+    "tags": ["email", "spf", "notifications"],
+    "synonyms": ["order emails not arriving", "custom email domain"],
+    "explanation": "Shopify notification emails fail or land in spam when the sender domain is not authenticated, or the notification was disabled.",
+    "steps": [
+      "Settings → Notifications and confirm Order confirmation is enabled.",
+      "Settings → Notifications → Sender email: add your domain and complete SPF/DKIM as shown.",
+      "Do not send from a free Gmail/Yahoo address — providers block it.",
+      "Check the customer's spam folder and the order timeline to see if Shopify sent the mail.",
+      "Branded domains need a CNAME Shopify gives you; add it at your DNS host and click Verify."
+    ],
+    "target_ui_hint": "Settings > Notifications",
+    "arrow": { "x": 0.2, "y": 0.7 },
+    "source_category_db": "general"
+  },
+  {
+    "id": "general-markets-010",
+    "category": "general",
+    "match_phrases": ["markets", "market is unpublished", "pricing in this market", "catalogs"],
+    "tags": ["markets", "catalog", "international"],
+    "synonyms": ["country not seeing store", "wrong prices abroad"],
+    "explanation": "A Market controls whether a country can see the store, which catalog/prices they get, and which domain they land on.",
+    "steps": [
+      "Settings → Markets and open the country that is failing.",
+      "The market must be Active / published. A draft market hides the storefront for that country.",
+      "Check the catalog assigned to the market — an empty catalog makes every product appear unavailable.",
+      "Domains and languages for that market are on the same page.",
+      "Use the market preview (globe icon) rather than a VPN when testing."
+    ],
+    "target_ui_hint": "Settings > Markets",
+    "arrow": { "x": 0.2, "y": 0.54 },
+    "source_category_db": "general"
+  },
+  {
+    "id": "general-pixel-011",
+    "category": "general",
+    "match_phrases": ["customer events", "pixel", "meta pixel", "google analytics", "checkout pixel"],
+    "tags": ["pixel", "tracking", "analytics"],
+    "synonyms": ["facebook pixel not firing", "ga4 missing purchases"],
+    "explanation": "Checkout is sandboxed. Old theme pixels will not see purchases — they must be installed as customer events pixels.",
+    "steps": [
+      "Settings → Customer events.",
+      "Add the Meta, Google, or custom pixel there — not as a script tag in theme.liquid.",
+      "Grant the pixel permission to connect to marketing and sales data.",
+      "Use the pixel helper (Meta) or GA4 DebugView and run a test checkout.",
+      "Remove duplicate pixels from the theme to avoid double-counted purchases."
+    ],
+    "target_ui_hint": "Settings > Customer events",
+    "arrow": { "x": 0.2, "y": 0.6 },
+    "source_category_db": "general"
+  },
+  {
+    "id": "general-gift-card-012",
+    "category": "general",
+    "match_phrases": ["gift card", "gift cards are disabled", "issue gift card"],
+    "tags": ["giftcard", "product"],
+    "synonyms": ["gift cards not selling", "balance not applying"],
+    "explanation": "Gift cards are a special product type. They must be issued, not just created as a normal product with a price.",
+    "steps": [
+      "Products → Gift cards (or add a new product of type Gift card).",
+      "Do not require shipping on gift cards.",
+      "To issue one manually: Orders → the order → or Products → Gift cards → Issue gift card.",
+      "Customers apply the code at checkout. Staff can also apply it on a draft order.",
+      "Check the gift card's remaining balance if a customer says it did not work."
+    ],
+    "target_ui_hint": "Products > Gift cards",
+    "arrow": { "x": 0.22, "y": 0.26 },
+    "source_category_db": "general"
+  }
+]

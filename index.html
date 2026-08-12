@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Storescope — Shopify Live Scanner</title>
+  <meta name="description" content="Point Storescope at your Shopify admin. Instant playbooks and arrows for payouts, shipping, themes, and checkout errors." />
+  <meta name="theme-color" content="#07090c" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icons/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch.png" />
+  <meta property="og:title" content="Storescope — Shopify Live Scanner" />
+  <meta property="og:description" content="Screen-capture troubleshooting for Shopify admin. Dictionary-first fixes, offline playbooks, no camera." />
+  <meta property="og:image" content="./og.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Sora:wght@400;550;650;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/app.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <a class="brand" href="./index.html">
+        <span class="logo" aria-hidden="true">
+          <svg viewBox="0 0 64 64" fill="none">
+            <circle cx="32" cy="32" r="16" stroke="#3EE0B0" stroke-width="3"/>
+            <circle cx="32" cy="32" r="5" stroke="#3EE0B0" stroke-width="2"/>
+            <path d="M32 12v6M32 46v6M12 32h6M46 32h6" stroke="#3EE0B0" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span>
+          <div class="brand-name">Store<span>scope</span></div>
+          <div class="brand-sub">Shopify live scanner</div>
+        </span>
+      </a>
+      <nav class="nav">
+        <span class="pill" id="dictPill">Loading playbooks</span>
+        <span class="pill" id="netPill">Online</span>
+        <button class="ghost" id="howBtn" type="button">How it works</button>
+        <button class="ghost" id="histBtn" type="button">Playbook</button>
+        <button class="ghost" id="privBtn" type="button">Privacy</button>
+      </nav>
+    </header>
+
+    <div class="offline-banner" id="offlineBanner" hidden>
+      You're offline. Dictionary answers and history still work. Live OCR needs a connection the first time.
+    </div>
+
+    <section id="landing">
+      <div class="hero">
+        <div>
+          <div class="kicker"><i class="pulse"></i> Screen capture only · never a camera</div>
+          <h1>Your Shopify admin, <em>diagnosed live</em>.</h1>
+          <p class="lede">
+            Share the admin tab (or drop a screenshot). Storescope reads the banner,
+            matches a local playbook, and tells you the next click — in plain steps.
+          </p>
+
+          <div id="onboardingFull">
+            <div class="steps">
+              <article class="step">
+                <div class="step-num">1</div>
+                <h3>Open Shopify</h3>
+                <p>Have your Shopify admin open in a browser tab.</p>
+              </article>
+              <article class="step">
+                <div class="step-num">2</div>
+                <h3>Tap Start scan</h3>
+                <p>We'll ask which tab to watch — pick your Shopify tab.</p>
+              </article>
+              <article class="step">
+                <div class="step-num">3</div>
+                <h3>Get instant answers</h3>
+                <p>Tips and arrows show what to click next.</p>
+              </article>
+            </div>
+          </div>
+          <p id="onboardingMini" hidden>
+            <button class="linkish" id="howBtnMini" type="button">How it works</button>
+          </p>
+
+          <div class="cta-row">
+            <button class="solid" id="startBtn" type="button">Start scanning</button>
+            <button class="ghost" id="uploadBtn" type="button">Upload screenshot</button>
+          </div>
+          <p class="fine" id="capNote">The browser share picker is a security boundary. Storescope never sees other tabs unless you pick them.</p>
+        </div>
+        <aside class="preview-card" aria-hidden="true">
+          <div class="chrome"><i></i><i></i><i></i></div>
+          <div class="mock">
+            <img src="./samples/payout-hold.svg" alt="" />
+            <div class="float-tip">
+              <strong>Payouts are on hold</strong>
+              <span>Finish identity verification under Settings → Payments. Step 1 of 5.</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="scanner" hidden>
+      <div class="scanner">
+        <div class="stage">
+          <div class="stage-bar">
+            <span class="pill" id="livePill">Idle</span>
+            <span class="pill" id="ocrStatus">Ready</span>
+          </div>
+          <div class="frame-wrap" id="frameWrap">
+            <video id="liveVideo" autoplay playsinline muted hidden></video>
+            <img id="stillImage" alt="Captured Shopify admin" hidden />
+            <svg id="arrowLayer" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+          <div class="stage-actions">
+            <button class="solid" id="scanBtn" type="button">What's wrong?</button>
+            <button class="amber" id="pauseBtn" type="button">Pause</button>
+            <button class="danger" id="stopBtn" type="button">Stop</button>
+            <button class="ghost" id="uploadBtn2" type="button">Upload</button>
+            <form class="ask-box" id="askForm">
+              <input id="askInput" type="search" placeholder="Or type the banner / ask about a control" autocomplete="off" />
+              <button class="ghost" type="submit">Ask</button>
+            </form>
+          </div>
+        </div>
+
+        <aside class="side">
+          <div class="card">
+            <div id="emptyTip">
+              <h2>Waiting for a screen</h2>
+              <p class="empty">Share the Shopify tab and tap <b>What's wrong?</b> — or try a sample below. Answers come from the local dictionary first.</p>
+            </div>
+            <div id="tipBody" hidden>
+              <h2 id="tipTitle">Next fix</h2>
+              <div class="meta" id="tipMeta"></div>
+              <p class="expl" id="tipExpl"></p>
+              <ol class="steps-ol" id="tipSteps"></ol>
+              <div class="card-actions">
+                <button class="solid" id="nextBtn" type="button">Next step</button>
+                <button class="ghost" id="dismissBtn" type="button">Dismiss</button>
+              </div>
+              <div id="related" class="samples" style="margin-top:12px"></div>
+            </div>
+          </div>
+          <div class="card">
+            <h2>Try a sample screen</h2>
+            <p class="empty">No Shopify tab handy? These mock admin screens hit the same dictionary.</p>
+            <div class="samples" id="sampleList"></div>
+          </div>
+          <div class="card">
+            <h2>Words we read</h2>
+            <pre class="ocr-box" id="ocrText">—</pre>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <input id="fileInput" type="file" accept="image/*" hidden />
+
+  <div class="drawer-back" id="howDrawer" hidden>
+    <div class="drawer" role="dialog" aria-labelledby="howTitle">
+      <header>
+        <h2 id="howTitle">How it works</h2>
+        <button class="ghost" id="howClose" type="button">Close</button>
+      </header>
+      <ol>
+        <li><b>Open Shopify</b> — have admin open in a browser tab.</li>
+        <li><b>Tap Start scan</b> — pick that Shopify tab in the share picker. On phones that cannot share tabs, upload an OS screenshot (not a camera photo).</li>
+        <li><b>Tap What's wrong?</b> — we read on-screen text, search the local playbook, and only then consider a broader fallback. Arrows point at the control to use next.</li>
+      </ol>
+      <p class="empty">Nothing is stored as an image unless you keep the file yourself. Session history saves the tip text only.</p>
+    </div>
+  </div>
+
+  <div class="drawer-back" id="histDrawer" hidden>
+    <div class="drawer" role="dialog" aria-labelledby="histTitle">
+      <header>
+        <h2 id="histTitle">Your playbook</h2>
+        <div>
+          <button class="ghost" id="histClear" type="button">Clear</button>
+          <button class="ghost" id="histClose" type="button">Close</button>
+        </div>
+      </header>
+      <div id="histList"></div>
+    </div>
+  </div>
+
+  <div class="drawer-back" id="privDrawer" hidden>
+    <div class="drawer" role="dialog" aria-labelledby="privTitle">
+      <header>
+        <h2 id="privTitle">Privacy</h2>
+        <button class="solid" id="privClose" type="button">Got it</button>
+      </header>
+      <p>Shopify admin can show customer names, payouts, and API keys. Treat this tool like a person looking over your shoulder.</p>
+      <ul>
+        <li>Screen pixels are processed in your browser. We do not upload screenshots to a Storescope server.</li>
+        <li>OCR libraries may load from a public CDN the first time you scan.</li>
+        <li>History stores tip text in IndexedDB on this device — never the raw image.</li>
+        <li>Use <b>Pause</b> before opening customer lists or secret keys.</li>
+        <li>The browser share dialog is the only way we can see a tab. You can stop sharing at any time.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="./js/vendor/fuse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+  <script type="module" src="./js/app.js"></script>
+  <script>
+    document.getElementById("howBtnMini").addEventListener("click", () => {
+      document.getElementById("howDrawer").hidden = false;
+    });
+  </script>
+</body>
+</html>

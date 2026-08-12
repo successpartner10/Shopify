@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-label="Shopify unable to accept payments">
+  <rect width="960" height="560" fill="#f1f1f1"/>
+  <rect width="220" height="560" fill="#1a1a1a"/>
+  <text x="28" y="40" fill="#95bf47" font-family="Arial, sans-serif" font-size="18" font-weight="700">S  mystore</text>
+  <g fill="#d2d5d9" font-family="Arial, sans-serif" font-size="14">
+    <text x="28" y="88">Home</text>
+    <text x="28" y="238" fill="#ffffff" font-weight="700">Settings</text>
+  </g>
+  <rect x="220" width="740" height="56" fill="#ffffff"/>
+  <text x="244" y="36" fill="#202223" font-family="Arial, sans-serif" font-size="18" font-weight="700">Settings / Payments</text>
+  <rect x="244" y="80" width="692" height="64" rx="8" fill="#fbeae5" stroke="#e0b3a3"/>
+  <text x="264" y="108" fill="#7a1f12" font-family="Arial, sans-serif" font-size="16" font-weight="700">This store is currently unable to accept payments</text>
+  <text x="264" y="128" fill="#7a1f12" font-family="Arial, sans-serif" font-size="13">Activate Shopify Payments or choose a third-party provider.</text>
+  <rect x="244" y="164" width="692" height="360" rx="10" fill="#ffffff"/>
+  <text x="268" y="204" fill="#202223" font-family="Arial, sans-serif" font-size="20" font-weight="700">Payment providers</text>
+  <rect x="268" y="228" width="240" height="36" rx="6" fill="#008060"/>
+  <text x="286" y="251" fill="#ffffff" font-family="Arial, sans-serif" font-size="13" font-weight="700">Complete account setup</text>
+  <text x="268" y="300" fill="#202223" font-family="Arial, sans-serif" font-size="14">Shopify Payments  Available in Canada</text>
+  <text x="268" y="332" fill="#6d7175" font-family="Arial, sans-serif" font-size="14">Third-party providers  Choose third-party provider</text>
+  <text x="268" y="364" fill="#6d7175" font-family="Arial, sans-serif" font-size="14">PayPal  Not connected</text>
+  <text x="268" y="396" fill="#6d7175" font-family="Arial, sans-serif" font-size="14">Manual payment methods  None</text>
+  <text x="268" y="428" fill="#6d7175" font-family="Arial, sans-serif" font-size="14">Test mode  Off</text>
+</svg>
