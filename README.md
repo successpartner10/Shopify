@@ -4,12 +4,12 @@ A progressive web app that looks at whatever Shopify admin screen a merchant is 
 
 | | |
 |---|---|
-| **Live site (GitHub Pages)** | https://successpartner10.github.io/Shopify/ |
+| **Live site (Cloudflare Pages, free)** | https://storescope-cwl.pages.dev/ |
 | **Source** | https://github.com/successpartner10/Shopify |
 | **Offline zip** | [Storescope-offline.zip](./Storescope-offline.zip) |
 | **Spec implemented** | Shopify Live Scanner PWA (dictionary-first MVP + arrow overlay + share) |
-| **Share this app** | https://successpartner10.github.io/Shopify/ |
-| **Example shared fix** | https://successpartner10.github.io/Shopify/?fix=payments-payout-hold-001 |
+| **Share this app** | https://storescope-cwl.pages.dev/ |
+| **Example shared fix** | https://storescope-cwl.pages.dev/?fix=payments-payout-hold-001 |
 
 ---
 
@@ -28,7 +28,7 @@ Most answers never leave the device. The dictionary is the default path; a struc
 
 ## Live URL
 
-**https://successpartner10.github.io/Shopify/**
+**https://storescope-cwl.pages.dev/**
 
 Install it: in Chrome / Edge open the live URL → **Install** in the app, or the browser menu → **Install Storescope**. It opens standalone and works offline for dictionary answers and history.
 
@@ -37,13 +37,13 @@ Install it: in Chrome / Edge open the live URL → **Install** in the app, or th
 Tap **Share** in the header (or **Share app** on the home screen):
 
 - **Share via device** — uses the phone/desktop share sheet (Messages, Slack, AirDrop, Mail)
-- **Copy link** — `https://successpartner10.github.io/Shopify/`
+- **Copy link** — `https://storescope-cwl.pages.dev/`
 - **WhatsApp / Text / Email / X / LinkedIn / Telegram / Facebook**
 - **QR code** — print or air-drop `icons/qr-app.png` so a teammate can scan it open
 
 Shared **fix** links look like:
 
-`https://successpartner10.github.io/Shopify/?fix=payments-payout-hold-001`
+`https://storescope-cwl.pages.dev/?fix=payments-payout-hold-001`
 
 They open the same numbered playbook on the other person's device. Search links work too: `?q=no+shipping+methods`.
 
@@ -189,15 +189,17 @@ There is no build step. Edit JSON or JS and refresh.
 
 ---
 
-## GitHub Pages
+## Hosting
 
-The site is served from the `main` branch root (`/`).
+**Public site:** [https://storescope-cwl.pages.dev/](https://storescope-cwl.pages.dev/) on **Cloudflare Pages** (free, no credit card). Deployed with Wrangler from this folder — GitHub does **not** need to be public.
 
-- Repo: `successpartner10/Shopify`
-- Pages URL: `https://successpartner10.github.io/Shopify/`
-- `.nojekyll` is present so GitHub does not run Jekyll on the static files.
+```bash
+npx wrangler pages deploy . --project-name=storescope
+```
 
-After a push, Pages usually updates within a minute.
+See [CLOUDFLARE.md](./CLOUDFLARE.md) for the token steps.
+
+You can make `successpartner10/Shopify` **private** after this URL is live. GitHub Pages on the free plan would stop working; Cloudflare will not.
 
 ---
 

@@ -1,0 +1,10 @@
+# Cloudflare Pages — free tier, no credit card, no public GitHub required.
+# Deploy:  npx wrangler pages deploy . --project-name=storescope
+# Auth:    CLOUDFLARE_API_TOKEN  (Account → Cloudflare Pages → Edit)
+
+name = "storescope"
+compatibility_date = "2026-08-12"
+pages_build_output_dir = "."
+
+[vars]
+APP_PUBLIC_URL = "https://storescope-cwl.pages.dev"

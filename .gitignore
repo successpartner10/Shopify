@@ -4,5 +4,7 @@
 *.log
 .env
 .env.*
+.dev.vars
+.wrangler
 node_modules
 .cache

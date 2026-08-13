@@ -1,4 +1,13 @@
-export const APP_URL = "https://successpartner10.github.io/Shopify/";
+function publicBase() {
+  if (typeof location !== "undefined" && /^https?:/.test(location.protocol)) {
+    const path = location.pathname.replace(/index\.html$/i, "");
+    const base = path.endsWith("/") ? path : `${path}/`;
+    return `${location.origin}${base}`;
+  }
+  return "https://storescope-cwl.pages.dev/";
+}
+
+export const APP_URL = publicBase();
 export const APP_TITLE = "Storescope — Shopify Live Scanner";
 export const APP_BLURB =
   "Point Storescope at your Shopify admin. Instant playbooks for payouts, shipping, themes, and checkout errors.";
