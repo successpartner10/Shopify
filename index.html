@@ -6,12 +6,24 @@
   <title>Storescope — Shopify Live Scanner</title>
   <meta name="description" content="Point Storescope at your Shopify admin. Instant playbooks and arrows for payouts, shipping, themes, and checkout errors." />
   <meta name="theme-color" content="#07090c" />
+  <link rel="canonical" href="https://successpartner10.github.io/Shopify/" />
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" href="./icons/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icons/apple-touch.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Storescope" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://successpartner10.github.io/Shopify/" />
   <meta property="og:title" content="Storescope — Shopify Live Scanner" />
   <meta property="og:description" content="Screen-capture troubleshooting for Shopify admin. Dictionary-first fixes, offline playbooks, no camera." />
-  <meta property="og:image" content="./og.jpg" />
+  <meta property="og:image" content="https://successpartner10.github.io/Shopify/og.jpg" />
+  <meta property="og:image:width" content="1672" />
+  <meta property="og:image:height" content="941" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Storescope — Shopify Live Scanner" />
+  <meta name="twitter:description" content="Share your Shopify admin tab. Get the next click." />
+  <meta name="twitter:image" content="https://successpartner10.github.io/Shopify/og.jpg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Sora:wght@400;550;650;700&display=swap" rel="stylesheet" />
@@ -38,6 +50,8 @@
         <span class="pill" id="netPill">Online</span>
         <button class="ghost" id="howBtn" type="button">How it works</button>
         <button class="ghost" id="histBtn" type="button">Playbook</button>
+        <button class="ghost" id="shareBtn" type="button">Share</button>
+        <button class="ghost" id="installBtn" type="button" hidden>Install</button>
         <button class="ghost" id="privBtn" type="button">Privacy</button>
       </nav>
     </header>
@@ -82,6 +96,7 @@
           <div class="cta-row">
             <button class="solid" id="startBtn" type="button">Start scanning</button>
             <button class="ghost" id="uploadBtn" type="button">Upload screenshot</button>
+            <button class="ghost" id="shareBtn2" type="button">Share app</button>
           </div>
           <p class="fine" id="capNote">The browser share picker is a security boundary. Storescope never sees other tabs unless you pick them.</p>
         </div>
@@ -135,6 +150,7 @@
               <ol class="steps-ol" id="tipSteps"></ol>
               <div class="card-actions">
                 <button class="solid" id="nextBtn" type="button">Next step</button>
+                <button class="ghost" id="shareFixBtn" type="button">Share this fix</button>
                 <button class="ghost" id="dismissBtn" type="button">Dismiss</button>
               </div>
               <div id="related" class="samples" style="margin-top:12px"></div>
@@ -176,6 +192,7 @@
       <header>
         <h2 id="histTitle">Your playbook</h2>
         <div>
+          <button class="ghost" id="histShare" type="button">Share all</button>
           <button class="ghost" id="histClear" type="button">Clear</button>
           <button class="ghost" id="histClose" type="button">Close</button>
         </div>
@@ -198,6 +215,47 @@
         <li>Use <b>Pause</b> before opening customer lists or secret keys.</li>
         <li>The browser share dialog is the only way we can see a tab. You can stop sharing at any time.</li>
       </ul>
+    </div>
+  </div>
+
+  <div class="drawer-back" id="shareDrawer" hidden>
+    <div class="drawer" role="dialog" aria-labelledby="shareTitle">
+      <header>
+        <h2 id="shareTitle">Share Storescope</h2>
+        <button class="ghost" id="shareClose" type="button">Close</button>
+      </header>
+      <p class="empty" id="shareIntro">Send the app, or hand a teammate the exact fix you are looking at. Links open the same playbook.</p>
+
+      <label class="share-label" for="shareLink">Link</label>
+      <div class="share-copy-row">
+        <input id="shareLink" type="text" readonly value="https://successpartner10.github.io/Shopify/" />
+        <button class="solid" id="copyLinkBtn" type="button">Copy</button>
+      </div>
+
+      <div class="share-grid">
+        <button class="solid" id="nativeShareBtn" type="button">Share via device</button>
+        <button class="ghost" id="copyMsgBtn" type="button">Copy message</button>
+        <button class="ghost" id="downloadFixBtn" type="button">Download .md</button>
+      </div>
+
+      <div class="socials" id="socials">
+        <a id="shareWhatsapp" target="_blank" rel="noopener">WhatsApp</a>
+        <a id="shareSms" target="_blank" rel="noopener">Text</a>
+        <a id="shareEmail" target="_blank" rel="noopener">Email</a>
+        <a id="shareX" target="_blank" rel="noopener">X</a>
+        <a id="shareLinkedin" target="_blank" rel="noopener">LinkedIn</a>
+        <a id="shareTelegram" target="_blank" rel="noopener">Telegram</a>
+        <a id="shareFacebook" target="_blank" rel="noopener">Facebook</a>
+      </div>
+
+      <div class="qr-wrap">
+        <img src="./icons/qr-app.png" width="168" height="168" alt="QR code for Storescope" id="shareQr" />
+        <div>
+          <h3>Scan to open</h3>
+          <p class="empty">Works on any phone camera. Add to Home Screen after it opens for the installable PWA.</p>
+          <a class="linkish" href="./icons/qr-app-print.png" download="storescope-qr.png">Download QR</a>
+        </div>
+      </div>
     </div>
   </div>
 

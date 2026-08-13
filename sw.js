@@ -1,4 +1,4 @@
-const VERSION = "storescope-v1.0.0";
+const VERSION = "storescope-v1.1.0";
 const PRECACHE = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const PRECACHE = [
   "./js/ocr.js",
   "./js/capture.js",
   "./js/samples.js",
+  "./js/share.js",
   "./js/vendor/fuse.min.js",
   "./data/payments.json",
   "./data/shipping.json",
@@ -17,6 +18,7 @@ const PRECACHE = [
   "./icons/favicon.svg",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./icons/qr-app.png",
   "./samples/payout-hold.svg",
   "./samples/no-shipping.svg",
   "./samples/no-provider.svg",

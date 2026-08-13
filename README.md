@@ -7,7 +7,9 @@ A progressive web app that looks at whatever Shopify admin screen a merchant is 
 | **Live site (GitHub Pages)** | https://successpartner10.github.io/Shopify/ |
 | **Source** | https://github.com/successpartner10/Shopify |
 | **Offline zip** | [Storescope-offline.zip](./Storescope-offline.zip) |
-| **Spec implemented** | Shopify Live Scanner PWA (dictionary-first MVP + arrow overlay) |
+| **Spec implemented** | Shopify Live Scanner PWA (dictionary-first MVP + arrow overlay + share) |
+| **Share this app** | https://successpartner10.github.io/Shopify/ |
+| **Example shared fix** | https://successpartner10.github.io/Shopify/?fix=payments-payout-hold-001 |
 
 ---
 
@@ -28,7 +30,24 @@ Most answers never leave the device. The dictionary is the default path; a struc
 
 **https://successpartner10.github.io/Shopify/**
 
-Install it: in Chrome / Edge open the live URL → browser menu → **Install Storescope** (or the install icon in the address bar). It opens standalone, works offline for dictionary answers and history.
+Install it: in Chrome / Edge open the live URL → **Install** in the app, or the browser menu → **Install Storescope**. It opens standalone and works offline for dictionary answers and history.
+
+### Share the app
+
+Tap **Share** in the header (or **Share app** on the home screen):
+
+- **Share via device** — uses the phone/desktop share sheet (Messages, Slack, AirDrop, Mail)
+- **Copy link** — `https://successpartner10.github.io/Shopify/`
+- **WhatsApp / Text / Email / X / LinkedIn / Telegram / Facebook**
+- **QR code** — print or air-drop `icons/qr-app.png` so a teammate can scan it open
+
+Shared **fix** links look like:
+
+`https://successpartner10.github.io/Shopify/?fix=payments-payout-hold-001`
+
+They open the same numbered playbook on the other person's device. Search links work too: `?q=no+shipping+methods`.
+
+Installed copies also register as an Android **share target** — share error text from another app into Storescope and it runs the dictionary.
 
 ---
 
@@ -94,8 +113,9 @@ The search box accepts merchant language (“why is my money stuck”, “no shi
 | Arrow pointing at target control | Done | Relative `arrow` coords on each playbook entry |
 | Related / tap alternate playbooks | Done | Shown under the tip |
 | Sample admin screens | Done | Payout hold, no rates, no provider, theme errors |
+| Shareable app + playbook export | Done | Web Share API, copy link, socials, QR, `?fix=` deep links, `.md` download, Android share target |
 
-Not in this MVP (listed as stretch in the spec): live vision-model API proxy, Meta/Pinterest/Collective dictionaries, shareable playbook export, multi-store profiles, auto-promotion of fallback answers.
+Not in this MVP (listed as stretch in the spec): live vision-model API proxy, Meta/Pinterest/Collective dictionaries, multi-store profiles, auto-promotion of fallback answers.
 
 ---
 

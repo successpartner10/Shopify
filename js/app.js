@@ -3,8 +3,16 @@ import { saveSession, listSessions, clearSessions } from "./history.js";
 import { canCapture, startTabCapture, stopStream } from "./capture.js";
 import { ocrAvailable, recognize, frameToCanvas } from "./ocr.js";
 import { SAMPLES } from "./samples.js";
+import {
+  APP_URL, APP_TITLE, APP_BLURB, fixUrl, playbookMarkdown, playbookText,
+  copyText, nativeShare, canNativeShare, parseInbound, socialLinks, downloadText
+} from "./share.js";
 
 const $ = (id) => document.getElementById(id);
+const on = (id, event, fn) => {
+  const el = $(id);
+  if (el) el.addEventListener(event, fn);
+};
 
 const state = {
   entries: [],
@@ -15,7 +23,11 @@ const state = {
   stepIndex: 0,
   lastText: "",
   lastSource: null,
-  ready: false
+  ready: false,
+  lastMeta: null,
+  deferredInstall: null,
+  shareMode: "app",
+  historyRows: []
 };
 
 function toast(msg) {
@@ -51,9 +63,9 @@ function showScanner() {
   $("scanner").hidden = false;
 }
 
-function setLiveStatus(label, on = false) {
+function setLiveStatus(label, active = false) {
   $("livePill").textContent = label;
-  $("livePill").classList.toggle("on", on);
+  $("livePill").classList.toggle("on", active);
   $("livePill").classList.toggle("warn", /pause|error|denied/i.test(label));
 }
 
@@ -110,8 +122,49 @@ function drawArrow(target) {
   `;
 }
 
+function sharePayload(mode = state.shareMode) {
+  if (mode === "fix" && state.current) {
+    return {
+      title: `Storescope: ${state.current.target_ui_hint}`,
+      text: playbookText(state.current),
+      url: fixUrl(state.current.id)
+    };
+  }
+  return { title: APP_TITLE, text: APP_BLURB, url: APP_URL };
+}
+
+function paintShareDrawer(mode = "app") {
+  state.shareMode = mode;
+  const payload = sharePayload(mode);
+  const links = socialLinks(payload.url, payload.title);
+  $("shareTitle").textContent = mode === "fix" ? "Share this fix" : mode === "history" ? "Share playbook" : "Share Storescope";
+  $("shareIntro").textContent = mode === "fix"
+    ? "Sends the numbered steps plus a link that opens this same playbook."
+    : mode === "history"
+      ? "Full text of every saved fix on this device. No screenshots included."
+      : "Send the live app. Recipients can install it or open it in any browser.";
+  $("shareLink").value = payload.url;
+  const map = {
+    shareWhatsapp: links.whatsapp,
+    shareSms: links.sms,
+    shareEmail: links.email,
+    shareX: links.x,
+    shareLinkedin: links.linkedin,
+    shareTelegram: links.telegram,
+    shareFacebook: links.facebook
+  };
+  for (const [id, href] of Object.entries(map)) {
+    const el = $(id);
+    if (el) el.href = href;
+  }
+  $("nativeShareBtn").hidden = !canNativeShare();
+  $("downloadFixBtn").hidden = mode === "app";
+  $("shareDrawer").hidden = false;
+}
+
 function renderResult(entry, meta) {
   state.current = entry;
+  state.lastMeta = meta;
   state.stepIndex = 0;
   $("emptyTip").hidden = true;
   $("tipBody").hidden = false;
@@ -289,6 +342,19 @@ async function onFile(file) {
   await runScan();
 }
 
+function historyMarkdown(rows) {
+  if (!rows.length) return `${APP_TITLE}\n${APP_URL}`;
+  return [
+    "# Storescope playbook",
+    "",
+    ...rows.map((r) => {
+      const steps = (r.steps || []).map((s, i) => `${i + 1}. ${s}`).join("\n");
+      return `## ${r.title || "Fix"}\n_${new Date(r.createdAt).toLocaleString()}_\n\n${r.explanation || ""}\n\n${steps}\n`;
+    }),
+    `App: ${APP_URL}`
+  ].join("\n");
+}
+
 async function refreshHistory() {
   const rows = await listSessions();
   $("histList").innerHTML = rows.length
@@ -301,6 +367,97 @@ async function refreshHistory() {
       </article>
     `).join("")
     : `<p class="empty">No scans yet. Run “What's wrong?” and the playbook will land here — text only, no images.</p>`;
+  state.historyRows = rows;
+}
+
+function applyInbound() {
+  const inbound = parseInbound();
+  if (inbound.fix) {
+    const entry = state.entries.find((e) => e.id === inbound.fix);
+    if (entry) {
+      markOnboarded();
+      showScanner();
+      setLiveStatus("Shared link");
+      state.lastText = inbound.fix;
+      renderResult(entry, { source: "shared-link", confidence: 1, alternatives: [], query: inbound.fix });
+      toast("Opened a shared playbook.");
+      return;
+    }
+  }
+  const q = [inbound.q, inbound.sharedUrl].filter(Boolean).join(" ").trim();
+  if (q) {
+    markOnboarded();
+    showScanner();
+    $("askInput").value = inbound.q || "";
+    applyQuery(q);
+    toast("Opened from a shared search.");
+  }
+}
+
+function wireShare() {
+  on("shareBtn", "click", () => paintShareDrawer(state.current ? "fix" : "app"));
+  on("shareBtn2", "click", () => paintShareDrawer("app"));
+  on("shareFixBtn", "click", () => paintShareDrawer("fix"));
+  on("shareClose", "click", () => { $("shareDrawer").hidden = true; });
+  on("shareDrawer", "click", (e) => { if (e.target.id === "shareDrawer") e.target.hidden = true; });
+  on("copyLinkBtn", "click", async () => {
+    const ok = await copyText($("shareLink").value);
+    toast(ok ? "Link copied." : "Could not copy — select the link instead.");
+  });
+  on("copyMsgBtn", "click", async () => {
+    const text = state.shareMode === "history"
+      ? historyMarkdown(state.historyRows || [])
+      : sharePayload().text;
+    const ok = await copyText(text);
+    toast(ok ? "Message copied." : "Copy failed.");
+  });
+  on("nativeShareBtn", "click", async () => {
+    try {
+      const p = state.shareMode === "history"
+        ? { title: "Storescope playbook", text: historyMarkdown(state.historyRows || []), url: APP_URL }
+        : sharePayload();
+      await nativeShare(p);
+    } catch (err) {
+      if (err?.name !== "AbortError") toast("Share was cancelled or blocked.");
+    }
+  });
+  on("downloadFixBtn", "click", () => {
+    if (state.shareMode === "history") {
+      downloadText("storescope-playbook.md", historyMarkdown(state.historyRows || []));
+    } else if (state.current) {
+      const slug = (state.current.id || "fix").replace(/[^\w-]+/g, "-");
+      downloadText(`${slug}.md`, playbookMarkdown(state.current));
+    } else {
+      downloadText("storescope.md", playbookMarkdown(null));
+    }
+    toast("Download started.");
+  });
+  on("histShare", "click", async () => {
+    const rows = state.historyRows.length ? state.historyRows : await listSessions();
+    state.historyRows = rows;
+    paintShareDrawer("history");
+  });
+  on("installBtn", "click", async () => {
+    if (state.deferredInstall) {
+      state.deferredInstall.prompt();
+      const choice = await state.deferredInstall.userChoice;
+      state.deferredInstall = null;
+      $("installBtn").hidden = true;
+      toast(choice.outcome === "accepted" ? "Installing Storescope." : "Install dismissed.");
+      return;
+    }
+    paintShareDrawer("app");
+    toast("Use your browser menu → Add to Home Screen / Install.");
+  });
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    state.deferredInstall = e;
+    $("installBtn").hidden = false;
+  });
+  window.addEventListener("appinstalled", () => {
+    $("installBtn").hidden = true;
+    toast("Storescope is installed.");
+  });
 }
 
 function wireUi() {
@@ -308,34 +465,34 @@ function wireUi() {
   on("startBtn2", "click", beginCapture);
   on("uploadBtn", "click", () => $("fileInput").click());
   on("uploadBtn2", "click", () => $("fileInput").click());
-  $("fileInput").addEventListener("change", (e) => {
+  on("fileInput", "change", (e) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (file) onFile(file);
   });
-  $("scanBtn").addEventListener("click", () => runScan());
-  $("pauseBtn").addEventListener("click", pauseCapture);
-  $("stopBtn").addEventListener("click", () => {
+  on("scanBtn", "click", () => runScan());
+  on("pauseBtn", "click", pauseCapture);
+  on("stopBtn", "click", () => {
     stopCapture();
     showLanding(!hasSeenOnboarding());
   });
-  $("howBtn").addEventListener("click", () => { $("howDrawer").hidden = false; });
-  $("howClose").addEventListener("click", () => { $("howDrawer").hidden = true; });
-  $("histBtn").addEventListener("click", async () => {
+  on("howBtn", "click", () => { $("howDrawer").hidden = false; });
+  on("howClose", "click", () => { $("howDrawer").hidden = true; });
+  on("histBtn", "click", async () => {
     await refreshHistory();
     $("histDrawer").hidden = false;
   });
-  $("histClose").addEventListener("click", () => { $("histDrawer").hidden = true; });
-  $("histClear").addEventListener("click", async () => {
+  on("histClose", "click", () => { $("histDrawer").hidden = true; });
+  on("histClear", "click", async () => {
     await clearSessions();
     await refreshHistory();
   });
-  $("privBtn").addEventListener("click", () => { $("privDrawer").hidden = false; });
-  $("privClose").addEventListener("click", () => {
+  on("privBtn", "click", () => { $("privDrawer").hidden = false; });
+  on("privClose", "click", () => {
     $("privDrawer").hidden = true;
     localStorage.setItem("ss_privacy", "1");
   });
-  $("askForm").addEventListener("submit", (e) => {
+  on("askForm", "submit", (e) => {
     e.preventDefault();
     const q = $("askInput").value.trim();
     if (!q) return;
@@ -344,23 +501,23 @@ function wireUi() {
     state.lastText = [q, state.lastText].filter(Boolean).join("\n");
     applyQuery(state.lastText || q, {});
   });
-  $("nextBtn").addEventListener("click", () => {
+  on("nextBtn", "click", () => {
     if (!state.current) return;
     state.stepIndex = Math.min(state.current.steps.length - 1, state.stepIndex + 1);
     [...$("tipSteps").children].forEach((li, i) => li.classList.toggle("current", i === state.stepIndex));
   });
-  $("dismissBtn").addEventListener("click", () => {
+  on("dismissBtn", "click", () => {
     $("tipBody").hidden = true;
     $("emptyTip").hidden = false;
     clearArrow();
   });
-  $("tipSteps").addEventListener("click", (e) => {
+  on("tipSteps", "click", (e) => {
     const li = e.target.closest("li");
     if (!li) return;
     state.stepIndex = Number(li.dataset.i);
     [...$("tipSteps").children].forEach((n) => n.classList.toggle("current", n === li));
   });
-  $("related").addEventListener("click", (e) => {
+  on("related", "click", (e) => {
     const btn = e.target.closest("[data-alt]");
     if (!btn) return;
     const entry = state.entries.find((x) => x.id === btn.dataset.alt);
@@ -369,16 +526,16 @@ function wireUi() {
   $("sampleList").innerHTML = SAMPLES.map((s) =>
     `<button class="sample" data-sample="${s.id}"><b>${s.title}</b><span>${s.blurb}</span></button>`
   ).join("");
-  $("sampleList").addEventListener("click", (e) => {
+  on("sampleList", "click", (e) => {
     const btn = e.target.closest("[data-sample]");
     if (!btn) return;
     const sample = SAMPLES.find((s) => s.id === btn.dataset.sample);
     if (sample) loadSample(sample);
   });
-  $("howDrawer").addEventListener("click", (e) => { if (e.target.id === "howDrawer") e.target.hidden = true; });
-  $("histDrawer").addEventListener("click", (e) => { if (e.target.id === "histDrawer") e.target.hidden = true; });
-  $("privDrawer").addEventListener("click", (e) => { if (e.target.id === "privDrawer") e.target.hidden = true; });
-
+  on("howDrawer", "click", (e) => { if (e.target.id === "howDrawer") e.target.hidden = true; });
+  on("histDrawer", "click", (e) => { if (e.target.id === "histDrawer") e.target.hidden = true; });
+  on("privDrawer", "click", (e) => { if (e.target.id === "privDrawer") e.target.hidden = true; });
+  wireShare();
   window.addEventListener("online", setOnlineUi);
   window.addEventListener("offline", setOnlineUi);
   window.addEventListener("resize", () => { if (state.current) drawArrow(state.current.arrow); });
@@ -398,6 +555,7 @@ async function boot() {
     state.ready = true;
     $("dictPill").textContent = `${entries.length} playbooks`;
     if (errors.length) toast("Some dictionaries failed to load.");
+    applyInbound();
   } catch (err) {
     toast("Could not load the local dictionary.");
     console.error(err);

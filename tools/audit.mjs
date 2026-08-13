@@ -16,7 +16,8 @@ function assert(cond, msg) {
 const required = [
   "index.html", "404.html", "manifest.json", "sw.js", "README.md", ".nojekyll",
   "css/app.css", "js/app.js", "js/dictionary.js", "js/history.js", "js/ocr.js",
-  "js/capture.js", "js/samples.js", "js/vendor/fuse.min.js",
+  "js/capture.js", "js/samples.js", "js/share.js", "js/vendor/fuse.min.js",
+  "icons/qr-app.png",
   "data/payments.json", "data/shipping.json", "data/general.json",
   "samples/payout-hold.svg", "samples/no-shipping.svg", "samples/no-provider.svg",
   "samples/theme-errors.svg", "icons/favicon.svg", "icons/icon-192.png", "icons/icon-512.png"

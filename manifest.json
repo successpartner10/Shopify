@@ -1,4 +1,5 @@
 {
+  "id": "https://successpartner10.github.io/Shopify/",
   "name": "Storescope — Shopify Live Scanner",
   "short_name": "Storescope",
   "description": "Point Storescope at your Shopify admin. Get instant, step-by-step fixes with arrows on the exact control to click next.",
@@ -9,6 +10,7 @@
   "background_color": "#07090c",
   "theme_color": "#07090c",
   "lang": "en",
+  "dir": "ltr",
   "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
@@ -30,6 +32,28 @@
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "./og.jpg",
+      "sizes": "1672x941",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Storescope diagnosing a Shopify payout hold"
+    }
+  ],
+  "share_target": {
+    "action": "./index.html",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "prefer_related_applications": false
 }
