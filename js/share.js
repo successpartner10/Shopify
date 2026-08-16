@@ -4,7 +4,7 @@ function publicBase() {
     const base = path.endsWith("/") ? path : `${path}/`;
     return `${location.origin}${base}`;
   }
-  return "https://storescope-cwl.pages.dev/";
+  return "https://storescope-7bz.pages.dev/";
 }
 
 export const APP_URL = publicBase();

@@ -4,13 +4,13 @@ A progressive web app that looks at whatever Shopify admin screen a merchant is 
 
 | | |
 |---|---|
-| **Live site (Cloudflare Pages — full AI chat)** | https://storescope-cwl.pages.dev/ |
+| **Live site (Cloudflare Pages — full AI chat)** | https://storescope-7bz.pages.dev/ |
 | **GitHub Pages mirror (static — dictionary chat only)** | https://successpartner10.github.io/Shopify/ |
 | **Source** | https://github.com/successpartner10/Shopify |
 | **Offline zip** | [Storescope-offline.zip](./Storescope-offline.zip) |
 | **Spec implemented** | Shopify Live Scanner PWA (dictionary-first MVP + arrow overlay + share) |
-| **Share this app** | https://storescope-cwl.pages.dev/ |
-| **Example shared fix** | https://storescope-cwl.pages.dev/?fix=payments-payout-hold-001 |
+| **Share this app** | https://storescope-7bz.pages.dev/ |
+| **Example shared fix** | https://storescope-7bz.pages.dev/?fix=payments-payout-hold-001 |
 
 ---
 
@@ -29,7 +29,7 @@ Most answers never leave the device. The dictionary is the default path; a struc
 
 ## Live URL
 
-**https://storescope-cwl.pages.dev/**
+**https://storescope-7bz.pages.dev/**
 
 Install it: in Chrome / Edge open the live URL → **Install** in the app, or the browser menu → **Install Storescope**. It opens standalone and works offline for dictionary answers and history.
 
@@ -38,13 +38,13 @@ Install it: in Chrome / Edge open the live URL → **Install** in the app, or th
 Tap **Share** in the header (or **Share app** on the home screen):
 
 - **Share via device** — uses the phone/desktop share sheet (Messages, Slack, AirDrop, Mail)
-- **Copy link** — `https://storescope-cwl.pages.dev/`
+- **Copy link** — `https://storescope-7bz.pages.dev/`
 - **WhatsApp / Text / Email / X / LinkedIn / Telegram / Facebook**
 - **QR code** — print or air-drop `icons/qr-app.png` so a teammate can scan it open
 
 Shared **fix** links look like:
 
-`https://storescope-cwl.pages.dev/?fix=payments-payout-hold-001`
+`https://storescope-7bz.pages.dev/?fix=payments-payout-hold-001`
 
 They open the same numbered playbook on the other person's device. Search links work too: `?q=no+shipping+methods`.
 
@@ -271,7 +271,7 @@ There is no build step. Edit JSON or JS and refresh.
 
 ## Hosting
 
-**Public site:** [https://storescope-cwl.pages.dev/](https://storescope-cwl.pages.dev/) on **Cloudflare Pages** (free, no credit card). Deployed with Wrangler from this folder — GitHub does **not** need to be public.
+**Public site:** [https://storescope-7bz.pages.dev/](https://storescope-7bz.pages.dev/) on **Cloudflare Pages** (free, no credit card). Deployed with Wrangler from this folder — GitHub does **not** need to be public.
 
 ```bash
 npx wrangler pages deploy . --project-name=storescope

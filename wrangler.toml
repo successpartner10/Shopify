@@ -7,7 +7,7 @@ compatibility_date = "2026-08-12"
 pages_build_output_dir = "."
 
 [vars]
-APP_PUBLIC_URL = "https://storescope-cwl.pages.dev"
+APP_PUBLIC_URL = "https://storescope-7bz.pages.dev"
 
 # --- AI chat tier -----------------------------------------------------------
 # Create the namespaces once, then paste the ids below:

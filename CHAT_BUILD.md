@@ -12,16 +12,42 @@ exactly where the build stopped. Updated after every completed step.
 - **Pushed to GitHub `main`** — commit `35ecfbf`, 29 files, +3,589 / −16.
 - **GitHub Pages LIVE** → https://successpartner10.github.io/Shopify/ (static build)
 - **Cloudflare Pages NOT yet redeployed** — needs `CLOUDFLARE_ACCOUNT_ID` +
-  `CLOUDFLARE_API_TOKEN`. `storescope-cwl.pages.dev` is still the old build with no chat.
+  `CLOUDFLARE_API_TOKEN`. `storescope-7bz.pages.dev` is still the old build with no chat.
 
 ---
+
+## Finish the Cloudflare setup (2 steps, then it is fully done)
+
+**1. Bind Workers AI and KV.** Dashboard → **Workers & Pages → storescope → Settings →
+Bindings** (or Functions on older UI):
+- **AI binding** — variable name `AI`
+- **KV namespace binding** — variable name `AGENT_KV` → the namespace from step 2
+
+**2. Create the namespaces and fill in the ids:**
+```bash
+npx wrangler kv namespace create AGENT_KV          # prints the production id
+npx wrangler kv namespace create AGENT_KV --preview # prints the preview id
+# paste both into wrangler.toml, replacing REPLACE_WITH_*
+git commit -am "Add real KV namespace ids" && git push
+npx wrangler pages deploy . --project-name=storescope
+```
+
+Verify:
+```bash
+curl -s https://storescope-7bz.pages.dev/api/chat -X POST \
+  -H 'content-type: application/json' \
+  -d '{"message":"payouts on hold 5 days"}' | head -c 300
+```
+`"tier":"ai"` means Workers AI is attached. `"tier":"fallback"` with
+`"reason":"no AI binding"` means step 1 has not taken effect — bindings only apply to
+**new** deployments, so redeploy after adding them.
 
 ## Where it is deployed
 
 | Target | URL | Chat capability | State |
 |---|---|---|---|
 | GitHub Pages | https://successpartner10.github.io/Shopify/ | dictionary + on-device OCR only | **live** |
-| Cloudflare Pages | https://storescope-cwl.pages.dev/ | full: AI research + vision + AGENT_KV | **old build — redeploy pending** |
+| Cloudflare Pages | https://storescope-7bz.pages.dev/ | full: AI research + vision + AGENT_KV | **old build — redeploy pending** |
 | Offline zip | `Storescope-offline.zip` (546 KB, 42 files) | dictionary + on-device OCR only | in repo |
 | Local dev | `npm run dev` → :4173 | full, with fake KV + canned model | on demand |
 | Local Cloudflare | `npm run dev:cf` | full, real Workers AI + real KV | needs `wrangler login` |

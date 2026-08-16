@@ -10,7 +10,7 @@ This is the host that lets you **make GitHub private** without paying.
 
 Official Pages page: [cloudflare.com/products/pages](https://www.cloudflare.com/products/pages/) — *Start building for free — no credit card required.*
 
-Live URL after deploy: `https://storescope-cwl.pages.dev` (or the next free name if that one is taken).
+Live URL after deploy: `https://storescope-7bz.pages.dev` (or the next free name if that one is taken).
 
 ---
 
