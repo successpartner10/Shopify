@@ -214,7 +214,12 @@
         <li>History stores tip text in IndexedDB on this device — never the raw image.</li>
         <li>Use <b>Pause</b> before opening customer lists or secret keys.</li>
         <li>The browser share dialog is the only way we can see a tab. You can stop sharing at any time.</li>
+        <li><b>Chat is the one exception.</b> A screenshot you attach in <b>Ask Storescope</b> is sent to our Worker for that single answer — not saved, not used for training. We ask you once before the first one.</li>
+        <li>Chat text you send is used to answer you and, if you tap <b>This fixed it</b>, to add a fix to the shared playbook. Emails, phone numbers, and API keys are stripped before anything is saved.</li>
       </ul>
+      <div class="card-actions">
+        <button class="ghost" id="consentRevoke" type="button">Turn off sending screenshots in chat</button>
+      </div>
     </div>
   </div>
 
@@ -255,6 +260,70 @@
           <p class="empty">Works on any phone camera. Add to Home Screen after it opens for the installable PWA.</p>
           <a class="linkish" href="./icons/qr-app-print.png" download="storescope-qr.png">Download QR</a>
         </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ── AI chat ─────────────────────────────────────────────────────────── -->
+  <button class="chat-fab" id="chatFab" type="button" aria-expanded="false" aria-controls="chatSheet">
+    <svg viewBox="0 0 24 24" aria-hidden="true" width="22" height="22">
+      <path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-5.6A8 8 0 1 1 21 12Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      <circle cx="9" cy="12" r="1.1" fill="currentColor"/><circle cx="13" cy="12" r="1.1" fill="currentColor"/><circle cx="17" cy="12" r="1.1" fill="currentColor"/>
+    </svg>
+    <span>Ask</span>
+  </button>
+
+  <div class="chat-back" id="chatBack" hidden>
+    <section class="chat-sheet" id="chatSheet" role="dialog" aria-modal="true" aria-labelledby="chatTitle">
+      <header class="chat-head">
+        <div>
+          <h2 id="chatTitle">Ask Storescope</h2>
+          <p class="chat-sub">I read screenshots and explain fixes — I can't change anything in your store.</p>
+        </div>
+        <div class="chat-head-actions">
+          <button class="ghost" id="chatNew" type="button">New chat</button>
+          <button class="ghost" id="chatClose" type="button">Close</button>
+        </div>
+      </header>
+
+      <div class="chat-thread" id="chatThread" aria-live="polite" aria-busy="false"></div>
+
+      <p class="chat-typing" id="chatTyping" hidden><i></i><i></i><i></i> Researching your answer…</p>
+      <p class="chat-queued" id="chatQueued" hidden></p>
+
+      <form class="chat-composer" id="chatForm">
+        <div class="chat-chip" id="chatChip" hidden>
+          <img id="chatChipThumb" alt="" />
+          <span id="chatChipName">screenshot</span>
+          <button type="button" id="chatChipRemove" aria-label="Remove screenshot">✕</button>
+        </div>
+        <p class="chat-mic-status" id="chatMicStatus" hidden></p>
+        <div class="chat-row">
+          <button class="chat-icon" id="chatAttach" type="button" title="Attach a screenshot" aria-label="Attach a screenshot">📎</button>
+          <button class="chat-icon" id="chatMic" type="button" title="Dictate your question" aria-label="Dictate your question" aria-pressed="false">🎤</button>
+          <input id="chatInput" type="text" autocomplete="off" placeholder="Describe what you see, or attach a screenshot" />
+          <button class="solid" id="chatSend" type="submit">Send</button>
+        </div>
+      </form>
+      <input id="chatFile" type="file" accept="image/png,image/jpeg,image/webp" hidden />
+    </section>
+  </div>
+
+  <div class="drawer-back" id="consentBack" hidden>
+    <div class="drawer narrow" role="dialog" aria-modal="true" aria-labelledby="consentTitle">
+      <header>
+        <h2 id="consentTitle">This screenshot leaves your device</h2>
+      </header>
+      <p>To read a screenshot, Storescope sends it to our Cloudflare Worker for that one answer.</p>
+      <ul>
+        <li>It is <b>not saved</b>, not used for training, and not shared.</li>
+        <li>Scanning, OCR, and dictionary answers still happen on your device.</li>
+        <li>Blur or crop anything sensitive first — payouts, customer names, API keys.</li>
+      </ul>
+      <div class="card-actions">
+        <button class="solid" id="consentAccept" type="button">Continue</button>
+        <button class="ghost" id="consentCancel" type="button">Cancel</button>
       </div>
     </div>
   </div>

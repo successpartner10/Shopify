@@ -1,4 +1,4 @@
-const VERSION = "storescope-v1.2.0";
+const VERSION = "storescope-v1.3.0";
 const PRECACHE = [
   "./",
   "./index.html",
@@ -10,6 +10,10 @@ const PRECACHE = [
   "./js/capture.js",
   "./js/samples.js",
   "./js/share.js",
+  "./js/chat.js",
+  "./js/chat-ui.js",
+  "./js/chat-voice.js",
+  "./js/consent.js",
   "./js/vendor/fuse.min.js",
   "./data/payments.json",
   "./data/shipping.json",
@@ -44,6 +48,8 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
+  // Chat + dictionary endpoints must never be served from cache.
+  if (url.pathname.startsWith("/api/")) return;
 
   event.respondWith(
     caches.match(req).then((cached) => {

@@ -7,6 +7,8 @@ import {
   APP_URL, APP_TITLE, APP_BLURB, fixUrl, playbookMarkdown, playbookText,
   copyText, nativeShare, canNativeShare, parseInbound, socialLinks, downloadText
 } from "./share.js";
+import { mountChat, openChat } from "./chat-ui.js";
+import { wireConsentControls } from "./consent.js";
 
 const $ = (id) => document.getElementById(id);
 const on = (id, event, fn) => {
@@ -536,6 +538,12 @@ function wireUi() {
   on("histDrawer", "click", (e) => { if (e.target.id === "histDrawer") e.target.hidden = true; });
   on("privDrawer", "click", (e) => { if (e.target.id === "privDrawer") e.target.hidden = true; });
   wireShare();
+  document.addEventListener("keydown", (e) => {
+    if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      openChat();
+    }
+  });
   window.addEventListener("online", setOnlineUi);
   window.addEventListener("offline", setOnlineUi);
   window.addEventListener("resize", () => { if (state.current) drawArrow(state.current.arrow); });
@@ -554,12 +562,28 @@ async function boot() {
     state.fuse = buildIndex(entries);
     state.ready = true;
     $("dictPill").textContent = `${entries.length} playbooks`;
-    if (errors.length) toast("Some dictionaries failed to load.");
+    if (errors.length && errors.some((e) => !String(e).startsWith("kv:"))) {
+      toast("Some dictionaries failed to load.");
+    }
     applyInbound();
   } catch (err) {
     toast("Could not load the local dictionary.");
     console.error(err);
   }
+
+  // AI chat — available from any screen, independent of the scanner state.
+  mountChat({
+    getEntries: () => state.entries,
+    getFuse: () => state.fuse,
+    isReady: () => state.ready,
+    toast,
+    onShare: (entry) => {
+      if (!entry) return;
+      state.current = entry;
+      paintShareDrawer("fix");
+    }
+  });
+  wireConsentControls(toast);
 
   if ("serviceWorker" in navigator) {
     try { await navigator.serviceWorker.register("./sw.js"); } catch { /* optional */ }

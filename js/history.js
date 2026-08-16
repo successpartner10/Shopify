@@ -1,8 +1,11 @@
 const DB_NAME = "storescope";
 const STORE = "sessions";
-const VERSION = 1;
+export const THREADS = "threads";   // chat threads, on-device only
+export const OUTBOX = "outbox";     // messages typed while offline
+const VERSION = 2;                  // v1 -> v2 adds the two chat stores
 
-function openDb() {
+/** Shared opener: history and chat must agree on the version or IDB throws. */
+export function openDb() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, VERSION);
     req.onupgradeneeded = () => {
@@ -10,6 +13,13 @@ function openDb() {
       if (!db.objectStoreNames.contains(STORE)) {
         const os = db.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
         os.createIndex("createdAt", "createdAt");
+      }
+      if (!db.objectStoreNames.contains(THREADS)) {
+        const th = db.createObjectStore(THREADS, { keyPath: "id" });
+        th.createIndex("updatedAt", "updatedAt");
+      }
+      if (!db.objectStoreNames.contains(OUTBOX)) {
+        db.createObjectStore(OUTBOX, { keyPath: "id", autoIncrement: true });
       }
     };
     req.onsuccess = () => resolve(req.result);

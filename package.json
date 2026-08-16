@@ -1,12 +1,18 @@
 {
   "name": "storescope",
   "private": true,
-  "description": "Storescope — Shopify Live Scanner PWA",
+  "description": "Storescope \u2014 Shopify Live Scanner PWA",
   "scripts": {
     "start": "python3 -m http.server 4173",
     "audit": "node tools/audit.mjs",
     "deploy": "wrangler pages deploy . --project-name=storescope --commit-dirty=true",
-    "deploy:preview": "wrangler pages deploy . --project-name=storescope --branch=preview --commit-dirty=true"
+    "deploy:preview": "wrangler pages deploy . --project-name=storescope --branch=preview --commit-dirty=true",
+    "test": "node tools/audit.mjs && node tools/chat-test.mjs && node tools/client-test.mjs",
+    "test:worker": "node tools/chat-test.mjs",
+    "test:client": "node tools/client-test.mjs",
+    "dev": "node tools/dev-server.mjs 4173",
+    "dev:cf": "wrangler pages dev .",
+    "zip": "node tools/make-zip.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.28.0"

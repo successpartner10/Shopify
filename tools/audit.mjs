@@ -20,7 +20,12 @@ const required = [
   "icons/qr-app.png",
   "data/payments.json", "data/shipping.json", "data/general.json",
   "samples/payout-hold.svg", "samples/no-shipping.svg", "samples/no-provider.svg",
-  "samples/theme-errors.svg", "icons/favicon.svg", "icons/icon-192.png", "icons/icon-512.png"
+  "samples/theme-errors.svg", "icons/favicon.svg", "icons/icon-192.png", "icons/icon-512.png",
+  "js/chat.js", "js/chat-ui.js", "js/chat-voice.js", "js/consent.js",
+  "functions/api/chat.js", "functions/api/resolve.js", "functions/api/dictionary.js",
+  "functions/_lib/match.js", "functions/_lib/guard.js", "functions/_lib/kv.js",
+  "tools/chat-test.mjs", "tools/client-test.mjs", "tools/dev-server.mjs",
+  "Storescope-offline.zip", ".github/workflows/deploy.yml"
 ];
 for (const f of required) {
   assert(fs.existsSync(path.join(root, f)), `exists ${f}`);
@@ -116,6 +121,70 @@ assert(!app.includes("getUserMedia"), "no camera API in app");
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
 assert(manifest.display === "standalone", "manifest standalone");
 assert(manifest.start_url.startsWith("./"), "relative start_url");
+
+/* ── AI chat tier ──────────────────────────────────────────────────────── */
+
+const chatIds = [
+  "chatFab", "chatBack", "chatSheet", "chatThread", "chatForm", "chatInput",
+  "chatAttach", "chatMic", "chatSend", "chatFile", "chatChip", "chatChipThumb",
+  "chatChipName", "chatChipRemove", "chatTyping", "chatQueued", "chatMicStatus",
+  "chatClose", "chatNew", "consentBack", "consentAccept", "consentCancel", "consentRevoke"
+];
+for (const id of chatIds) assert(html.includes(`id="${id}"`), `html has #${id}`);
+
+const chatJs = fs.readFileSync(path.join(root, "js/chat.js"), "utf8");
+const chatUi = fs.readFileSync(path.join(root, "js/chat-ui.js"), "utf8");
+const guardJs = fs.readFileSync(path.join(root, "functions/_lib/guard.js"), "utf8");
+const kvJs = fs.readFileSync(path.join(root, "functions/_lib/kv.js"), "utf8");
+const workerChat = fs.readFileSync(path.join(root, "functions/api/chat.js"), "utf8");
+const dictJs = fs.readFileSync(path.join(root, "js/dictionary.js"), "utf8");
+
+// thresholds and tiers
+assert(/INSTANT:\s*0\.62/.test(chatJs), "chat instant threshold 0.62");
+assert(/CONTEXT_FLOOR:\s*0\.46/.test(chatJs), "chat context floor 0.46");
+assert(/PENDING_DAMP\s*=\s*0\.85/.test(dictJs), "pending entries damped 0.85");
+assert(chatJs.includes('"./api/chat"'), "chat posts to /api/chat");
+assert(chatJs.includes('"./api/resolve"'), "resolve posts to /api/resolve");
+assert(chatUi.includes("AI researched") && chatUi.includes("Dictionary"), "both tier badges present");
+
+// the whole point: images never short-circuit to the dictionary
+assert(/if \(file\) \{\s*await answerWithWorker/.test(chatJs), "image messages always go to the worker");
+
+// schema written to AGENT_KV
+for (const field of ["section", "symptom", "tags", "diagnosis", "fix_steps"]) {
+  assert(kvJs.includes(field), `kv writes ${field}`);
+}
+assert(kvJs.includes('source: "chat"'), "kv tags chat-created entries");
+assert(kvJs.includes('status: "pending"'), "chat entries start pending");
+assert(/expirationTtl:\s*THREAD_TTL/.test(kvJs), "threads expire");
+
+// no-action guarantee
+assert(/cannot change, enable, disable, refund/i.test(guardJs), "system prompt bans actions");
+assert(guardJs.includes("claimsAction"), "output filter exists");
+assert(workerChat.includes("claimsAction"), "worker applies the output filter");
+assert(chatUi.includes("can't change anything in your store"), "ui states the limitation");
+assert(html.includes("can't change anything in your store"), "chat header states the limitation");
+
+// privacy + consent
+assert(html.includes("This screenshot leaves your device"), "consent dialog copy");
+assert(html.includes("Chat is the one exception"), "privacy panel updated");
+assert(fs.readFileSync(path.join(root, "js/consent.js"), "utf8").includes("ss_img_consent"), "consent flag");
+
+// service worker must not cache the API
+assert(sw.includes('url.pathname.startsWith("/api/")'), "sw skips /api/");
+assert(sw.includes("./js/chat.js"), "sw precaches chat");
+
+// static-build degradation (GitHub Pages / offline zip have no Worker)
+const chatSrc = fs.readFileSync(path.join(root, "js/chat.js"), "utf8");
+assert(/runtime\.api === false/.test(chatSrc), "chat detects a static build");
+assert(chatSrc.includes("answerFromScreenshotLocally"), "static build reads screenshots locally");
+assert(/export const runtime/.test(fs.readFileSync(path.join(root, "js/dictionary.js"), "utf8")), "runtime flags exported");
+
+// bindings
+const wrangler = fs.readFileSync(path.join(root, "wrangler.toml"), "utf8");
+assert(/binding\s*=\s*"AGENT_KV"/.test(wrangler), "AGENT_KV binding declared");
+assert(/\[ai\]/.test(wrangler), "Workers AI binding declared");
+if (/REPLACE_WITH_/.test(wrangler)) warn.push("wrangler.toml still has placeholder KV namespace ids");
 
 console.log(`OK ${ok.length}`);
 if (warn.length) console.log("WARN\n" + warn.join("\n"));

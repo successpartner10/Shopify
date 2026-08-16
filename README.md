@@ -4,7 +4,8 @@ A progressive web app that looks at whatever Shopify admin screen a merchant is 
 
 | | |
 |---|---|
-| **Live site (Cloudflare Pages, free)** | https://storescope-cwl.pages.dev/ |
+| **Live site (Cloudflare Pages — full AI chat)** | https://storescope-cwl.pages.dev/ |
+| **GitHub Pages mirror (static — dictionary chat only)** | https://successpartner10.github.io/Shopify/ |
 | **Source** | https://github.com/successpartner10/Shopify |
 | **Offline zip** | [Storescope-offline.zip](./Storescope-offline.zip) |
 | **Spec implemented** | Shopify Live Scanner PWA (dictionary-first MVP + arrow overlay + share) |
@@ -48,6 +49,77 @@ Shared **fix** links look like:
 They open the same numbered playbook on the other person's device. Search links work too: `?q=no+shipping+methods`.
 
 Installed copies also register as an Android **share target** — share error text from another app into Storescope and it runs the dictionary.
+
+---
+
+## Two builds, one codebase
+
+| | Cloudflare Pages | GitHub Pages / offline zip |
+|---|---|---|
+| Tap, Screenshot, typed Ask | yes | yes |
+| Chat — dictionary answers | yes | yes |
+| Chat — AI research | **yes** | no |
+| Chat — screenshot with vision | **yes** | reads it with on-device OCR instead |
+| Saving confirmed fixes to AGENT_KV | **yes** | no, kept on your device |
+
+The static build has no Worker behind it. The app detects that on load (`runtime.api`)
+and says so in the chat window the first time you ask, rather than throwing errors.
+Attached screenshots are then read by the OCR that already ships with the app, so
+nothing leaves your machine and no consent prompt appears.
+
+## Ask Storescope (AI chat)
+
+A fourth way in, alongside Tap, Screenshot, and typed Ask — it does not replace any of them.
+The **Ask** button is fixed bottom-right on every screen (`Cmd/Ctrl + K` also opens it).
+
+**What happens to each message**
+
+| Situation | Path | Badge |
+|---|---|---|
+| Text, dictionary confidence ≥ 0.62 | answered on-device, no network | `Dictionary` |
+| Text matching an unreviewed community entry | answered on-device, damped score | `Dictionary (community)` |
+| Text, 0.46–0.62 | Worker + LLM, near-miss passed as context | `AI researched` |
+| Text, < 0.46 | Worker + LLM, category context only | `AI researched` |
+| **Any screenshot** | always Worker + vision model (local OCR runs first for context) | `AI researched` |
+| AI unreachable / quota / offline | closest playbook or safe generic checks | `Local tips` |
+
+Tap **This fixed it** and the exchange is saved to `AGENT_KV` as a new entry
+(`section, symptom, tags, diagnosis, fix_steps`, `source: "chat"`, `status: "pending"`).
+Near-duplicates merge into the existing entry instead of creating a second one, and a
+pending entry is promoted to `published` after three independent confirmations.
+
+**Storescope has no Shopify OAuth and no Admin API.** Chat diagnoses and advises only.
+That is enforced in three places: the system prompt, a server-side output filter that
+rejects any "I've updated / I'll enable / I checked your store" phrasing (one repair retry,
+then it falls back to the dictionary), and the UI copy on every answer.
+
+**Screenshots in chat** are the one thing that leaves the device. The first attach shows a
+consent dialog; the choice is stored in `localStorage` and revocable from the Privacy panel.
+Images are downscaled to 1280px, re-encoded (which drops EXIF), sent for that single answer,
+and never written to KV.
+
+### Setup
+
+```bash
+npx wrangler kv namespace create AGENT_KV
+npx wrangler kv namespace create AGENT_KV --preview   # keep prod and preview separate
+# paste both ids into wrangler.toml
+npx wrangler pages deploy . --project-name=storescope --branch=preview
+```
+
+Workers AI needs no key — the `[ai]` binding is enough.
+Models: `@cf/meta/llama-3.2-11b-vision-instruct` (images), `@cf/meta/llama-3.1-8b-instruct` (text).
+
+### Local development
+
+```bash
+npm run dev        # static files + functions/, fake KV, canned model, port 4173
+npm run dev:cf     # wrangler pages dev . — real Workers AI + real KV
+npm test           # audit + 57 worker tests + 33 client tests
+npm run zip        # rebuild Storescope-offline.zip from source
+```
+
+Endpoints: `GET /api/dictionary`, `POST /api/chat`, `POST /api/resolve`.
 
 ---
 

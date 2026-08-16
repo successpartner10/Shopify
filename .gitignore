@@ -8,3 +8,6 @@
 .wrangler
 node_modules
 .cache
+
+# local dev fake KV
+.dev-kv.json

@@ -1,0 +1,71 @@
+name: Deploy Storescope to Cloudflare Pages
+
+# Safest path: your credentials stay in GitHub, never in chat.
+#
+# One-time setup (Settings → Secrets and variables → Actions → New repository secret):
+#   CLOUDFLARE_API_TOKEN   Cloudflare dashboard → My Profile → API Tokens → Create Token
+#                          Template "Edit Cloudflare Workers", or a custom token with:
+#                            Account → Cloudflare Pages → Edit
+#                            Account → Workers KV Storage → Edit
+#                            Account → Workers AI → Read
+#   CLOUDFLARE_ACCOUNT_ID  Cloudflare dashboard → Workers & Pages → right sidebar
+#
+# Before the first run, put your real KV namespace ids in wrangler.toml:
+#   npx wrangler kv namespace create AGENT_KV
+#   npx wrangler kv namespace create AGENT_KV --preview
+
+on:
+  push:
+    branches: [main, preview]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Which branch to deploy to
+        required: true
+        default: preview
+        type: choice
+        options: [preview, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Project audit
+        run: node tools/audit.mjs
+      - name: Chat worker tests
+        run: node tools/chat-test.mjs
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fail fast on placeholder KV ids
+        run: |
+          if grep -q "REPLACE_WITH_" wrangler.toml; then
+            echo "::error::wrangler.toml still has placeholder KV namespace ids."
+            echo "Run: npx wrangler kv namespace create AGENT_KV  (and --preview), then paste both ids."
+            exit 1
+          fi
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy .
+            --project-name=storescope
+            --branch=${{ github.event.inputs.target || github.ref_name }}
+            --commit-dirty=true

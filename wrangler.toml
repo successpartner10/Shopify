@@ -8,3 +8,18 @@ pages_build_output_dir = "."
 
 [vars]
 APP_PUBLIC_URL = "https://storescope-cwl.pages.dev"
+
+# --- AI chat tier -----------------------------------------------------------
+# Create the namespaces once, then paste the ids below:
+#   npx wrangler kv namespace create AGENT_KV
+#   npx wrangler kv namespace create AGENT_KV --preview
+# Keep preview and production SEPARATE so test chatter never enters the real playbook.
+[[kv_namespaces]]
+binding = "AGENT_KV"
+id = "REPLACE_WITH_PRODUCTION_NAMESPACE_ID"
+preview_id = "REPLACE_WITH_PREVIEW_NAMESPACE_ID"
+
+# Workers AI — no API key, no vendor account.
+# Vision: @cf/meta/llama-3.2-11b-vision-instruct   Text: @cf/meta/llama-3.1-8b-instruct
+[ai]
+binding = "AI"

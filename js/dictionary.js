@@ -34,7 +34,46 @@ export function tokenize(text) {
     .filter((w) => w.length > 2);
 }
 
-export async function loadDictionaries() {
+/**
+ * Normalise either entry shape into one object carrying both field families:
+ *   seed : { category, match_phrases, synonyms, explanation, steps }
+ *   AGENT_KV : { section, symptom, diagnosis, fix_steps }
+ * Written once here so no other client code needs to translate fields.
+ */
+export function normalizeEntry(raw) {
+  if (!raw) return null;
+  const section = raw.section || raw.category || "general";
+  const diagnosis = raw.diagnosis || raw.explanation || "";
+  const steps = raw.fix_steps || raw.steps || [];
+  const symptom = raw.symptom || raw.target_ui_hint || (raw.match_phrases || [])[0] || "Issue";
+  return {
+    ...raw,
+    section,
+    category: section,
+    symptom,
+    target_ui_hint: raw.target_ui_hint || symptom,
+    diagnosis,
+    explanation: diagnosis,
+    fix_steps: steps,
+    steps,
+    tags: raw.tags || [],
+    synonyms: raw.synonyms || [],
+    match_phrases: raw.match_phrases || [],
+    arrow: raw.arrow || { x: 0.5, y: 0.12 },
+    status: raw.status || "published",
+    source: raw.source || "seed"
+  };
+}
+
+/**
+ * Runtime capability flags. `api` is null until we've probed once:
+ *   true  -> Cloudflare Pages build, Worker endpoints exist (full AI chat)
+ *   false -> static build (GitHub Pages / offline zip), dictionary answers only
+ */
+export const runtime = { api: null, kvCount: 0 };
+
+/** Static seed files only — always available, works offline. */
+async function loadSeed() {
   const files = ["payments", "shipping", "general"];
   const entries = [];
   const errors = [];
@@ -44,13 +83,46 @@ export async function loadDictionaries() {
         const res = await fetch(`./data/${name}.json`, { cache: "force-cache" });
         if (!res.ok) throw new Error(`${name} ${res.status}`);
         const data = await res.json();
-        for (const row of data) entries.push(row);
+        for (const row of data) entries.push(normalizeEntry(row));
       } catch (err) {
         errors.push(String(err));
       }
     })
   );
   return { entries, errors };
+}
+
+/**
+ * Seed files first, then AGENT_KV entries layered on top by id.
+ * The KV fetch is best-effort: offline or a missing Worker just means seed-only,
+ * so the Tap / Voice / Screenshot flows are never blocked by it.
+ */
+export async function loadDictionaries({ withKv = true } = {}) {
+  const { entries, errors } = await loadSeed();
+  if (!withKv || !navigator.onLine) return { entries, errors, kvCount: 0 };
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch("./api/dictionary", { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`dictionary ${res.status}`);
+    const data = await res.json();
+    runtime.api = true;
+    const kvRows = Array.isArray(data.entries) ? data.entries : [];
+    const byId = new Map(entries.map((e) => [e.id, e]));
+    for (const row of kvRows) {
+      const entry = normalizeEntry(row);
+      if (entry && entry.id && entry.status !== "rejected") byId.set(entry.id, entry);
+    }
+    runtime.kvCount = kvRows.length;
+    return { entries: [...byId.values()], errors, kvCount: kvRows.length };
+  } catch (err) {
+    // 404 / HTML / parse error all mean the same thing: no Worker behind this build.
+    runtime.api = false;
+    errors.push(`kv: ${String(err && err.message ? err.message : err)}`);
+    return { entries, errors, kvCount: 0 };
+  }
 }
 
 export function buildIndex(entries) {
@@ -68,6 +140,15 @@ export function buildIndex(entries) {
       { name: "target_ui_hint", weight: 0.05 }
     ]
   });
+}
+
+/**
+ * Unreviewed chat-created entries are searchable but damped, so a curated
+ * playbook always wins a tie (plan §3.3).
+ */
+export const PENDING_DAMP = 0.85;
+function dampPending(entry, score) {
+  return entry && entry.status === "pending" ? score * PENDING_DAMP : score;
 }
 
 function phraseHits(entry, hay) {
@@ -100,10 +181,8 @@ export function searchDictionary(entries, fuse, query, opts = {}) {
     if (hits > 0) {
       const catBoost = entry.category === preferred ? 0.15 : 0;
       const priBoost = (3 - CATEGORY_ORDER.indexOf(entry.category || "general")) * 0.02;
-      exact.push({
-        entry,
-        score: Math.min(0.99, 0.35 + hits * 0.12 + longest / 80 + catBoost + priBoost)
-      });
+      const raw = Math.min(0.99, 0.35 + hits * 0.12 + longest / 80 + catBoost + priBoost);
+      exact.push({ entry, score: dampPending(entry, raw) });
     }
   }
   exact.sort((a, b) => b.score - a.score);
@@ -112,7 +191,7 @@ export function searchDictionary(entries, fuse, query, opts = {}) {
   try {
     fuzzy = fuse.search(q, { limit: 8 }).map((r) => ({
       entry: r.item,
-      score: 1 - (r.score || 0.5)
+      score: dampPending(r.item, 1 - (r.score || 0.5))
     }));
   } catch {
     fuzzy = [];
@@ -140,6 +219,21 @@ export function searchDictionary(entries, fuse, query, opts = {}) {
     alternatives: ranked.slice(0, 3).map((r) => r.entry),
     source: "none",
     confidence: top ? Number(top.score.toFixed(2)) : 0
+  };
+}
+
+/**
+ * Score a query without rendering anything — used by the chat router to decide
+ * dictionary-instant vs send-to-Worker. Same code path as every other flow.
+ */
+export function scoreQuery(entries, fuse, query, opts = {}) {
+  const found = searchDictionary(entries, fuse, query, opts);
+  return {
+    match: found.match,
+    confidence: found.confidence,
+    source: found.source,
+    alternatives: found.alternatives,
+    isPending: Boolean(found.match && found.match.status === "pending")
   };
 }
 
