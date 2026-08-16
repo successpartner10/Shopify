@@ -9,7 +9,38 @@ exactly where the build stopped. Updated after every completed step.
   dev server verified end to end. Remaining work is account-side only (KV namespace ids + deploy).
 - Dev server: `npm run dev` (port 4173)
 - Tests: `npm test` → audit **384 OK** + worker **57 PASS** + client **33 PASS**
-- Published: GitHub `main` + GitHub Pages mirror. Cloudflare deploy still pending credentials.
+- **Pushed to GitHub `main`** — commit `35ecfbf`, 29 files, +3,589 / −16.
+- **GitHub Pages LIVE** → https://successpartner10.github.io/Shopify/ (static build)
+- **Cloudflare Pages NOT yet redeployed** — needs `CLOUDFLARE_ACCOUNT_ID` +
+  `CLOUDFLARE_API_TOKEN`. `storescope-cwl.pages.dev` is still the old build with no chat.
+
+---
+
+## Where it is deployed
+
+| Target | URL | Chat capability | State |
+|---|---|---|---|
+| GitHub Pages | https://successpartner10.github.io/Shopify/ | dictionary + on-device OCR only | **live** |
+| Cloudflare Pages | https://storescope-cwl.pages.dev/ | full: AI research + vision + AGENT_KV | **old build — redeploy pending** |
+| Offline zip | `Storescope-offline.zip` (546 KB, 42 files) | dictionary + on-device OCR only | in repo |
+| Local dev | `npm run dev` → :4173 | full, with fake KV + canned model | on demand |
+| Local Cloudflare | `npm run dev:cf` | full, real Workers AI + real KV | needs `wrangler login` |
+
+Why GitHub Pages cannot run the full chat: Pages serves static files only, so
+`functions/api/*` never executes and `/api/dictionary` returns 404. The app detects that
+and degrades — it does not error. Verified live: `index 200`, `js/chat.js 200`,
+`api/dictionary 404`.
+
+**To finish the Cloudflare side** (10 min, needs your credentials):
+```bash
+npx wrangler login
+npx wrangler kv namespace create AGENT_KV
+npx wrangler kv namespace create AGENT_KV --preview
+# paste both ids into wrangler.toml, replacing REPLACE_WITH_*
+npx wrangler pages deploy . --project-name=storescope --branch=preview
+```
+Or add `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` as GitHub repo secrets and let
+`.github/workflows/deploy.yml` do it on the next push.
 
 ---
 
@@ -48,12 +79,11 @@ the account-side steps in *What is actually left*.
 `tools/audit.mjs` (+63, 43 new assertions) · `wrangler.toml` (+15, bindings).
 
 ### Git state
-Nothing is committed yet — all changes are working-tree only. Suggested commit:
+Committed and pushed to `main` as `35ecfbf` (29 files, +3,589 / −16). Working tree clean
+apart from doc updates made after the push.
 
-```bash
-git add -A
-git commit -m "Add AI chat tier: dictionary-first routing, vision screenshots, AGENT_KV learning loop"
-```
+**Security note:** the GitHub PAT used for that push was pasted into chat and should be
+revoked at github.com/settings/tokens. It is not stored in any file in this repo.
 
 ---
 
@@ -328,6 +358,16 @@ npx wrangler pages deploy . --project-name=storescope --branch=preview
 **C — Hand the agent scoped, short-lived credentials.** Possible but least safe: a token
 pasted into chat is stored in the transcript. If you do it, scope it to
 Pages:Edit + KV:Edit + Workers AI:Read, and delete it in the Cloudflare dashboard right after.
+
+## Test suites (all green)
+
+| Command | Count | Covers |
+|---|---|---|
+| `node tools/audit.mjs` | **384 OK**, 1 warn | files exist, DOM ids, thresholds 0.62/0.46/0.85, KV schema fields, guard + disclaimer copy, sw skips `/api/`, bindings declared. Warn = placeholder KV ids. |
+| `node tools/chat-test.mjs` | **57 PASS** | fake KV + fake AI: matcher, pending damping, guard regexes, repair retry, degrade ladder, vision bytes, 415 bad MIME, rate limit at 30, create-vs-merge dedupe, PII scrub, auto-promote at 3, no-KV paths |
+| `node tools/client-test.mjs` | **33 PASS** | real client modules on a fake DOM/fetch/IndexedDB: id wiring, dictionary answers with zero network calls, unknown → Worker, image always → Worker, resolve, bubble rendering, **HTML escaping / XSS**, static-build degrade, consent persistence |
+
+`npm test` runs all three.
 
 ## Known caveats (deliberate, not bugs)
 
