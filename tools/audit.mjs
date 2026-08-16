@@ -24,7 +24,7 @@ const required = [
   "js/chat.js", "js/chat-ui.js", "js/chat-voice.js", "js/consent.js",
   "functions/api/chat.js", "functions/api/resolve.js", "functions/api/dictionary.js",
   "functions/_lib/match.js", "functions/_lib/guard.js", "functions/_lib/kv.js",
-  "tools/chat-test.mjs", "tools/client-test.mjs", "tools/dev-server.mjs",
+  "tools/chat-test.mjs", "tools/client-test.mjs", "tools/dev-server.mjs", "js/fingerprint.js",
   "Storescope-offline.zip", ".github/workflows/deploy.yml"
 ];
 for (const f of required) {
@@ -173,6 +173,16 @@ assert(fs.readFileSync(path.join(root, "js/consent.js"), "utf8").includes("ss_im
 // service worker must not cache the API
 assert(sw.includes('url.pathname.startsWith("/api/")'), "sw skips /api/");
 assert(sw.includes("./js/chat.js"), "sw precaches chat");
+
+// screen fingerprints: derived features only, never the image
+const fpSrc = fs.readFileSync(path.join(root, "js/fingerprint.js"), "utf8");
+const kvSrc2 = fs.readFileSync(path.join(root, "functions/_lib/kv.js"), "utf8");
+assert(fpSrc.includes("computeFingerprint") && fpSrc.includes("compareFingerprints"), "fingerprint api present");
+assert(!/toDataURL|\bb64\b|base64/.test(fpSrc), "fingerprint module never touches image bytes");
+assert(/MAX_FINGERPRINTS\s*=\s*8/.test(kvSrc2), "fingerprints capped per entry");
+assert(kvSrc2.includes("addFingerprint"), "kv stores fingerprints");
+assert(!/image|screenshot_b64/.test(kvSrc2.match(/function addFingerprint[\s\S]*?\n}/)[0]), "no image data in the stored fingerprint");
+assert(fs.readFileSync(path.join(root, "functions/_lib/match.js"), "utf8").includes("rankByFingerprint"), "worker ranks by screen");
 
 // static-build degradation (GitHub Pages / offline zip have no Worker)
 const chatSrc = fs.readFileSync(path.join(root, "js/chat.js"), "utf8");

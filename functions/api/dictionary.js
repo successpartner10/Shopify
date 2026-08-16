@@ -21,6 +21,8 @@ export async function onRequestGet({ request, env }) {
       match_phrases: e.match_phrases,
       target_ui_hint: e.target_ui_hint,
       arrow: e.arrow || { x: 0.5, y: 0.12 },
+      fingerprints: e.fingerprints || [],
+      screen_summary: e.screen_summary || null,
       source: e.source,
       status: e.status,
       hit_count: e.hit_count || 0

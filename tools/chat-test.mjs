@@ -13,7 +13,7 @@ const pass = [];
 const fail = [];
 const t = (name, cond) => (cond ? pass : fail).push(name);
 
-const { rank, normalizeEntry } = await import(path.join(root, "functions/_lib/match.js"));
+const { rank, normalizeEntry, hamming, compareFingerprints, rankByFingerprint } = await import(path.join(root, "functions/_lib/match.js"));
 const { validateAnswer, claimsAction, extractJson, scrub } = await import(path.join(root, "functions/_lib/guard.js"));
 const { onRequestPost: chatPost } = await import(path.join(root, "functions/api/chat.js"));
 const { onRequestPost: resolvePost } = await import(path.join(root, "functions/api/resolve.js"));
@@ -87,6 +87,42 @@ t("pending entries are damped below published", dampScore < liveScore);
 t("normalizeEntry bridges both schemas", (() => {
   const n = normalizeEntry({ id: "a", section: "shipping", symptom: "S", diagnosis: "D", fix_steps: ["1", "2"] });
   return n.category === "shipping" && n.explanation === "D" && n.steps.length === 2;
+})());
+
+/* ---------------------------- fingerprints -------------------------------- */
+
+const fpA = { v: 1, dhash: "9f1e3c4a7b20d811", tiles: ["1111000011110000", "0000111100001111", "aaaa5555aaaa5555", "5555aaaa5555aaaa"] };
+const fpSame = { ...fpA };                                            // identical screen
+const fpNear = { ...fpA, dhash: "9f1e3c4a7b20d813" };                 // 1 bit different
+const fpFar  = { v: 1, dhash: "0123456789abcdef", tiles: ["ffffffffffffffff", "0000000000000000", "1234123412341234", "abcdabcdabcdabcd"] };
+
+t("hamming: identical hashes are 0", hamming(fpA.dhash, fpSame.dhash) === 0);
+t("hamming: one flipped bit is 1", hamming(fpA.dhash, fpNear.dhash) === 1);
+t("hamming: unrelated hashes are far apart", hamming(fpA.dhash, fpFar.dhash) > 14);
+t("hamming: mismatched lengths are max distance", hamming("abcd", "abcdef12") === 64);
+
+t("same screen scores high", compareFingerprints(fpA, fpSame) >= 0.9);
+t("near-identical screen still matches", compareFingerprints(fpA, fpNear) >= 0.9);
+t("different screen scores zero", compareFingerprints(fpA, fpFar) === 0);
+t("missing fingerprint is not a match", compareFingerprints(fpA, null) === 0 && compareFingerprints(null, fpA) === 0);
+t("hash agreement without tile agreement is penalised", (() => {
+  const tilesDisagree = { ...fpNear, tiles: ["0000000000000000", "1111111111111111", "2222222222222222", "3333333333333333"] };
+  return compareFingerprints(fpA, tilesDisagree) < compareFingerprints(fpA, fpNear);
+})());
+
+t("rankByFingerprint finds the entry", (() => {
+  const entries = [
+    { id: "no-fp", section: "payments", symptom: "A", diagnosis: "x", fix_steps: ["a", "b"] },
+    { id: "has-fp", section: "payments", symptom: "B", diagnosis: "x", fix_steps: ["a", "b"], fingerprints: [fpA] }
+  ];
+  const hits = rankByFingerprint(entries, fpNear);
+  return hits.length === 1 && hits[0].entry.id === "has-fp";
+})());
+
+t("pending entries are damped on screen match too", (() => {
+  const pub = rankByFingerprint([{ id: "p", section: "general", symptom: "s", diagnosis: "d", fix_steps: ["a", "b"], fingerprints: [fpA] }], fpA)[0].score;
+  const pend = rankByFingerprint([{ id: "q", section: "general", symptom: "s", diagnosis: "d", fix_steps: ["a", "b"], status: "pending", fingerprints: [fpA] }], fpA)[0].score;
+  return pend < pub;
 })());
 
 /* -------------------------------- guards --------------------------------- */
@@ -288,6 +324,61 @@ const novelAnswer = {
   t("seed merge keeps the original id", stored.id === "payments-identity-verification-006");
   t("seed merge records the merchant phrasing", stored.synonyms.some((x) => /identity checks/.test(x)));
   t("seed merge is not queued for review", !kv.store.has("review:queue"));
+}
+
+{
+  // Fingerprint round-trip: saved on resolve, used as context on the next chat.
+  const kv = fakeKv();
+  const e = env({ kv });
+  const saved = await resolvePost({
+    request: new Request("https://x/api/resolve", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        question: "what is this screen telling me",
+        ...novelAnswer,
+        symptom: "Unknown banner on the apps page",
+        had_image: true,
+        fingerprint: fpA,
+        screen_summary: "Apps page with a red banner above the list"
+      })
+    }),
+    env: e
+  });
+  const key = (await saved.json()).key;
+  const stored = JSON.parse(kv.store.get(key));
+  t("fingerprint is stored on the entry", stored.fingerprints.length === 1 && stored.fingerprints[0].dhash === fpA.dhash);
+  t("no image data is stored", !JSON.stringify(stored).includes("base64") && JSON.stringify(stored).length < 4000);
+  t("screen_summary is stored", /red banner/.test(stored.screen_summary));
+
+  // A second, near-identical screenshot must not add a duplicate fingerprint.
+  await resolvePost({
+    request: new Request("https://x/api/resolve", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ question: "same screen again", ...novelAnswer, symptom: "Unknown banner on the apps page", had_image: true, fingerprint: fpNear })
+    }),
+    env: e
+  });
+  const after = JSON.parse(kv.store.get(key));
+  t("near-identical fingerprints are not duplicated", after.fingerprints.length === 1);
+
+  // A genuinely different screen for the same fix DOES get added.
+  await resolvePost({
+    request: new Request("https://x/api/resolve", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ question: "same fix, different page", ...novelAnswer, symptom: "Unknown banner on the apps page", had_image: true, fingerprint: fpFar })
+    }),
+    env: e
+  });
+  t("a distinct screen adds a second fingerprint", JSON.parse(kv.store.get(key)).fingerprints.length === 2);
+
+  // And the Worker should now use it as context for a screenshot chat.
+  const ai = async () => ({ response: JSON.stringify(goodAnswer) });
+  const res = await chatPost({
+    request: post({ message: "what now", image: { mime: "image/png", b64: "QUJD" }, fingerprint: fpA }),
+    env: env({ ai, kv })
+  });
+  const body = await res.json();
+  t("screen match is passed to the model as context", body.related.includes(JSON.parse(kv.store.get(key)).id));
 }
 
 /* ---------------------------- /api/dictionary ---------------------------- */

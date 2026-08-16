@@ -12,6 +12,7 @@
 
 import { scoreQuery, detectScreen, fallbackAnswer, normalizeEntry, runtime } from "./dictionary.js";
 import { openDb, THREADS, OUTBOX } from "./history.js";
+import { computeFingerprint, matchFingerprint } from "./fingerprint.js";
 
 export const CHAT_CONFIG = {
   INSTANT: 0.62,        // answer straight from the dictionary
@@ -219,6 +220,21 @@ async function answerWithWorker({ text, file, context = [], nearMiss = null }) {
   if (file) {
     const prepared = await prepareImage(file);
     payload.image = { mime: prepared.mime, b64: prepared.b64 };
+
+    // Screen fingerprint: 8 bytes that say WHICH admin screen this is.
+    // Never the image itself, so it is safe to keep in the shared playbook.
+    const fp = computeFingerprint(prepared.canvas);
+    if (fp) {
+      payload.fingerprint = fp;
+      const screenHits = matchFingerprint(deps?.getEntries?.() || [], fp);
+      if (screenHits.length) {
+        payload.screen_matches = screenHits.map((h) => ({
+          id: normalizeEntry(h.entry).id,
+          symptom: normalizeEntry(h.entry).symptom,
+          score: h.score
+        }));
+      }
+    }
     // Local OCR first: better dictionary context, and a graceful degrade path.
     const ocr = await tryOcr(prepared.canvas);
     if (ocr) {
@@ -268,6 +284,8 @@ async function answerWithWorker({ text, file, context = [], nearMiss = null }) {
     nearMiss: nearMiss ? normalizeEntry(nearMiss).symptom : null,
     model: data.model,
     hadImage: Boolean(file),
+    fingerprint: payload.fingerprint || null,
+    screen_summary: data.screen_summary || null,
     question: text
   });
 }
@@ -317,6 +335,31 @@ function answerLocally(text, extra = {}) {
  */
 async function answerFromScreenshotLocally(text, file) {
   const prepared = await prepareImage(file);
+  const entries = deps?.getEntries?.() || [];
+
+  // Fingerprint first: it works even when OCR fails (low res, other languages).
+  const fp = computeFingerprint(prepared.canvas);
+  const screenHit = matchFingerprint(entries, fp)[0];
+  if (screenHit && screenHit.score >= 0.75) {
+    const e = normalizeEntry(screenHit.entry);
+    pushAnswer({
+      tier: e.status === "pending" ? "community" : "dictionary",
+      section: e.section,
+      symptom: e.symptom,
+      diagnosis: e.diagnosis,
+      fix_steps: e.fix_steps,
+      tags: e.tags,
+      target_ui_hint: e.target_ui_hint,
+      confidence: screenHit.score,
+      entryId: e.id,
+      question: text,
+      note: "Recognised this admin screen from the playbook, on your device.",
+      hadImage: true,
+      fingerprint: fp
+    });
+    return;
+  }
+
   const ocr = await tryOcr(prepared.canvas);
   if (!ocr) {
     pushSystem("I couldn't read any text in that screenshot. Try typing the banner wording instead.");
@@ -324,7 +367,8 @@ async function answerFromScreenshotLocally(text, file) {
   }
   answerLocally(`${text} ${ocr}`.trim(), {
     note: "Read from your screenshot on this device, then matched to the playbook.",
-    hadImage: true
+    hadImage: true,
+    fingerprint: fp
   });
 }
 
@@ -402,6 +446,8 @@ export async function markResolved(messageId) {
         target_ui_hint: a.target_ui_hint,
         confidence: a.confidence,
         had_image: Boolean(a.hadImage),
+        fingerprint: a.fingerprint || null,
+        screen_summary: a.screen_summary || null,
         model: a.model || null
       })
     });

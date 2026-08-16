@@ -53,7 +53,30 @@ class El {
   closest() { return null; }
   querySelector() { return null; }
   appendChild(c) { this.children.push(c); return c; }
-  getContext() { return { drawImage() {}, canvas: this }; }
+  getContext() {
+    const self = this;
+    return {
+      canvas: self,
+      drawImage(src, sx, sy, sw, sh) {
+        // Record which region of which pattern was drawn, so getImageData can
+        // synthesise deterministic pixels for that crop.
+        self._src = { pattern: (src && src._pattern) || globalThis.__pattern || 1, sx: sx || 0, sy: sy || 0 };
+      },
+      getImageData(x, y, w, h) {
+        const p = (this.canvas._src && this.canvas._src.pattern) || 1;
+        const ox = Math.round((this.canvas._src && this.canvas._src.sx) || 0);
+        const data = new Uint8ClampedArray(w * h * 4);
+        for (let i = 0; i < w * h; i++) {
+          const px = i % w;
+          const py = Math.floor(i / w);
+          // deterministic pseudo-image: varies with pattern, position and crop
+          const v = (px * 37 + py * 61 * p + ox + p * 91) % 256;
+          data[i * 4] = v; data[i * 4 + 1] = v; data[i * 4 + 2] = v; data[i * 4 + 3] = 255;
+        }
+        return { data, width: w, height: h };
+      }
+    };
+  }
   toDataURL() { return "data:image/jpeg;base64,QUJD"; }
 }
 
@@ -173,7 +196,7 @@ globalThis.localStorage = localStorageStub;
 globalThis.navigator = { onLine: true, language: "en-CA" };
 globalThis.URL.createObjectURL = () => "blob:x";
 globalThis.URL.revokeObjectURL = () => {};
-globalThis.createImageBitmap = async () => ({ width: 800, height: 600 });
+globalThis.createImageBitmap = async (file) => ({ width: 800, height: 600, _pattern: (file && file._pattern) || 1 });
 globalThis.Response ||= (await import("node:buffer")).Blob && Response;
 
 /* --------------------------------- tests ---------------------------------- */
@@ -270,6 +293,53 @@ t("static build still makes no chat calls", calls.chat === staticChatBefore);
 
 const staticResolve = await chat.markResolved(staticUnknown.id);
 t("static build does not attempt a KV write", staticResolve.reason === "static");
+
+/* ---- screen fingerprints ---- */
+
+const fp = await import(path.join(root, "js/fingerprint.js"));
+
+globalThis.__pattern = 1;
+const c1 = new El("", "canvas"); c1.width = 800; c1.height = 600; c1._pattern = 1;
+const f1 = fp.computeFingerprint(c1);
+t("fingerprint has a 64-bit dhash", typeof f1.dhash === "string" && f1.dhash.length === 16);
+t("fingerprint has four quadrant tiles", f1.tiles.length === 4 && f1.tiles.every((x) => x.length === 16));
+t("fingerprint is versioned", f1.v === 1);
+
+const f1again = fp.computeFingerprint(c1);
+t("same screen produces the same hash", f1.dhash === f1again.dhash);
+t("same screen scores as a match", fp.compareFingerprints(f1, f1again) >= 0.9);
+
+globalThis.__pattern = 7;
+const c2 = new El("", "canvas"); c2.width = 800; c2.height = 600; c2._pattern = 7;
+const f2 = fp.computeFingerprint(c2);
+t("different screen produces a different hash", f1.dhash !== f2.dhash);
+t("different screen is not a false match", fp.compareFingerprints(f1, f2) < 0.6);
+
+t("fingerprint contains no image data", JSON.stringify(f1).length < 200);
+t("matchFingerprint finds the right entry", (() => {
+  const entries = [
+    { id: "a", symptom: "A", fingerprints: [] },
+    { id: "b", symptom: "B", fingerprints: [f1] }
+  ];
+  const hits = fp.matchFingerprint(entries, f1);
+  return hits.length === 1 && hits[0].entry.id === "b";
+})());
+t("computeFingerprint fails soft on a bad canvas", fp.computeFingerprint({ width: 0, height: 0 }) === null);
+
+// Static build: a known screen is recognised from the screenshot with no OCR and no network.
+mode = "static";
+dict.runtime.api = false;
+const known = loaded.entries.find((e) => e.id === "payments-payout-hold-001");
+globalThis.__pattern = 1;
+known.fingerprints = [f1];
+chat.newThread();
+const beforeStaticImg = calls.chat;
+await chat.sendMessage({ text: "", file: { name: "shot.png", _pattern: 1 } });
+const fpMsg = chat.chatState.messages.at(-1);
+t("static build recognises a known screen from a screenshot", fpMsg.tier === "dictionary" && fpMsg.answer.entryId === "payments-payout-hold-001");
+t("screen recognition needs no network", calls.chat === beforeStaticImg);
+t("screen recognition is explained to the user", /Recognised this admin screen/.test(fpMsg.answer.note || ""));
+known.fingerprints = [];
 
 /* ---- consent ---- */
 store.delete("ss_img_consent");

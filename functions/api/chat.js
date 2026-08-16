@@ -8,7 +8,7 @@
 import {
   json, checkRate, getAllEntries, readThread, writeThread, hasKv
 } from "../_lib/kv.js";
-import { rank, detectScreen, normalizeEntry, shortHash } from "../_lib/match.js";
+import { rank, detectScreen, normalizeEntry, shortHash, rankByFingerprint } from "../_lib/match.js";
 import {
   SYSTEM_PROMPT, extractJson, validateAnswer, claimsAction, DISCLAIMER
 } from "../_lib/guard.js";
@@ -57,7 +57,19 @@ export async function onRequestPost({ request, env }) {
   } catch { /* context is optional */ }
 
   const screen = detectScreen(query);
-  const ranked = rank(allEntries, query, { preferredCategory: screen.category, limit: 3 });
+  const textRanked = rank(allEntries, query, { preferredCategory: screen.category, limit: 3 });
+
+  // Screen fingerprint: identifies WHICH admin page this is, even when OCR fails.
+  const fingerprint = body.fingerprint && body.fingerprint.dhash ? body.fingerprint : null;
+  const screenRanked = rankByFingerprint(allEntries, fingerprint, 2);
+
+  // Merge, keeping the best score per entry; a screen match is strong evidence.
+  const mergedCtx = new Map();
+  for (const row of [...textRanked, ...screenRanked]) {
+    const prev = mergedCtx.get(row.entry.id);
+    if (!prev || row.score > prev.score) mergedCtx.set(row.entry.id, row);
+  }
+  const ranked = [...mergedCtx.values()].sort((a, b) => b.score - a.score).slice(0, 3);
   const contextEntries = ranked.length
     ? ranked
     : (Array.isArray(body.context_entries) ? body.context_entries : [])
@@ -69,7 +81,11 @@ export async function onRequestPost({ request, env }) {
   const clientHistory = Array.isArray(body.history) ? body.history : [];
   const history = (stored?.messages?.length ? stored.messages : clientHistory).slice(-HISTORY_TURNS);
 
-  const userPrompt = buildUserPrompt({ message, ocrText, contextEntries, history, retry, hasImage: Boolean(image) });
+  const userPrompt = buildUserPrompt({
+    message, ocrText, contextEntries, history, retry,
+    hasImage: Boolean(image),
+    screenMatches: screenRanked
+  });
 
   // ---- model call, with one repair retry ----
   let answer = null;
@@ -142,6 +158,7 @@ export async function onRequestPost({ request, env }) {
   return json({
     tier: "ai",
     ...answer,
+    screen_summary: answer.screen_summary || null,
     related,
     message_id: messageId,
     model: modelUsed,
@@ -182,8 +199,16 @@ async function callModel(env, { prompt, image, timeoutMs }) {
   return { text, model };
 }
 
-function buildUserPrompt({ message, ocrText, contextEntries, history, retry, hasImage }) {
+function buildUserPrompt({ message, ocrText, contextEntries, history, retry, hasImage, screenMatches = [] }) {
   const parts = [];
+
+  if (screenMatches.length) {
+    parts.push(
+      "SCREEN RECOGNITION: this screenshot visually matches admin screens already in the playbook — " +
+      screenMatches.map((m) => `${m.entry.symptom} (${Math.round(m.score * 100)}%)`).join("; ") +
+      ". Treat that as strong evidence of which page the merchant is on."
+    );
+  }
 
   if (contextEntries.length) {
     parts.push("EXISTING PLAYBOOK ENTRIES (build on these, do not present them as new):");
@@ -207,7 +232,13 @@ function buildUserPrompt({ message, ocrText, contextEntries, history, retry, has
   }
 
   if (ocrText) parts.push(`\nTEXT READ FROM THE MERCHANT'S SCREENSHOT:\n${ocrText.slice(0, 1500)}`);
-  if (hasImage) parts.push("\nAn admin screenshot is attached. Read any banner, error, or highlighted field in it.");
+  if (hasImage) {
+    parts.push(
+      "\nAn admin screenshot is attached. Read any banner, error, or highlighted field in it. " +
+      'Also add a "screen_summary" field: one short line naming the page and what is visibly wrong, ' +
+      "with no customer names, emails, order numbers, or money amounts in it."
+    );
+  }
   if (retry) parts.push("\nThe previous suggestion did NOT work. Do not repeat it — give a different, deeper cause.");
 
   parts.push(`\nMERCHANT'S MESSAGE:\n${message || "(no text — see the screenshot)"}`);

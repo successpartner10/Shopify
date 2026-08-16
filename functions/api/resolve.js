@@ -45,6 +45,8 @@ export async function onRequestPost({ request, env }) {
       question,
       thread_id: String(body.thread_id || "").slice(0, 40),
       had_image: Boolean(body.had_image),
+      fingerprint: body.fingerprint && body.fingerprint.dhash ? body.fingerprint : null,
+      screen_summary: body.screen_summary ? scrub(String(body.screen_summary)).slice(0, 160) : null,
       model: body.model || null
     });
     return json({

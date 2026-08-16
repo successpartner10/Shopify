@@ -1,6 +1,6 @@
 /** AGENT_KV access helpers. Key map per plan §3.2. */
 
-import { normalizeEntry, rank, slugify, shortHash } from "./match.js";
+import { normalizeEntry, rank, slugify, shortHash, compareFingerprints } from "./match.js";
 
 export const INDEX_KEY = "index:issues";
 export const REVIEW_KEY = "review:queue";
@@ -158,6 +158,8 @@ export async function saveIssue(env, request, answer, meta = {}) {
         source: target.source === "seed" ? "seed+chat" : target.source,
         status: "published",
         synonyms: dedupe([...(target.synonyms || []), meta.question].filter(Boolean)).slice(0, 40),
+        fingerprints: addFingerprint(target.fingerprints, meta.fingerprint),
+        screen_summary: target.screen_summary || meta.screen_summary || null,
         hit_count: (target.hit_count || 0) + 1,
         updated_at: now,
         thread_ref: meta.thread_id || null
@@ -169,6 +171,8 @@ export async function saveIssue(env, request, answer, meta = {}) {
     const merged = {
       ...target,
       synonyms: dedupe([...(target.synonyms || []), meta.question].filter(Boolean)).slice(0, 40),
+      fingerprints: addFingerprint(target.fingerprints, meta.fingerprint),
+      screen_summary: target.screen_summary || meta.screen_summary || null,
       hit_count: (target.hit_count || 0) + 1,
       updated_at: now
     };
@@ -194,6 +198,8 @@ export async function saveIssue(env, request, answer, meta = {}) {
     synonyms: meta.question ? [meta.question.slice(0, 120)] : [],
     target_ui_hint: answer.target_ui_hint,
     arrow: { x: 0.5, y: 0.12 },
+    fingerprints: addFingerprint([], meta.fingerprint),
+    screen_summary: meta.screen_summary || null,
     source: "chat",
     status: "pending",
     created_at: now,
@@ -243,6 +249,27 @@ async function upsertIndex(env, entry, key) {
   if (i === -1) index.unshift(row);
   else index[i] = row;
   await putIndex(env, index);
+}
+
+const MAX_FINGERPRINTS = 8;
+
+/**
+ * Add a screen fingerprint to an entry, unless we already have a near-identical
+ * one. 8 bytes each, capped at 8 per entry — no image data, no PII.
+ */
+function addFingerprint(existing = [], fp, meta = {}) {
+  if (!fp || !fp.dhash) return existing;
+  for (const stored of existing) {
+    if (compareFingerprints(fp, stored) >= 0.9) return existing; // already know this screen
+  }
+  const row = {
+    v: fp.v || 1,
+    dhash: String(fp.dhash).slice(0, 32),
+    tiles: (fp.tiles || []).slice(0, 4).map((x) => String(x).slice(0, 32)),
+    added: new Date().toISOString().slice(0, 10),
+    source: meta.source || "chat"
+  };
+  return [...existing, row].slice(-MAX_FINGERPRINTS);
 }
 
 function dedupe(list) {

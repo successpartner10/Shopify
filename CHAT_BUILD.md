@@ -8,7 +8,7 @@ exactly where the build stopped. Updated after every completed step.
 - Last updated: **BUILD COMPLETE — nothing left in code.** Audit 384/384, worker tests 57/57,
   dev server verified end to end. Remaining work is account-side only (KV namespace ids + deploy).
 - Dev server: `npm run dev` (port 4173)
-- Tests: `npm test` → audit **384 OK** + worker **57 PASS** + client **33 PASS**
+- Tests: `npm test` → audit **399 OK** + worker **74 PASS** + client **46 PASS**
 - **Pushed to GitHub `main`** — commit `35ecfbf`, 29 files, +3,589 / −16.
 - **GitHub Pages LIVE** → https://successpartner10.github.io/Shopify/ (static build)
 - **Cloudflare Pages NOT yet redeployed** — needs `CLOUDFLARE_ACCOUNT_ID` +
@@ -66,7 +66,8 @@ the account-side steps in *What is actually left*.
 | `js/consent.js` | 70 | one-time screenshot consent + revoke |
 | `tools/chat-test.mjs` | 332 | 57 worker-logic tests, fake KV + fake AI |
 | `tools/dev-server.mjs` | 140 | Node dev server running `functions/`, canned model |
-| `tools/client-test.mjs` | 300 | 33 client tests: real modules on a fake DOM/fetch/IDB |
+| `tools/client-test.mjs` | 380 | 46 client tests: real modules on a fake DOM/fetch/IDB |
+| `js/fingerprint.js` | 150 | dHash screen recognition, no image ever stored |
 | `tools/make-zip.mjs` | 25 | rebuilds `Storescope-offline.zip` from source |
 | `.github/workflows/deploy.yml` | 75 | test-then-deploy to Cloudflare Pages |
 
@@ -321,6 +322,46 @@ token output, and analytics on which tier answered.
    - tap **This fixed it** → toast, and the key appears in `review:queue`
 4. **Promote to production** once the preview KV holds a few sane entries.
 
+## Screen fingerprints (added after the first pass)
+
+**Decision: store the fingerprint, never the screenshot.** A Shopify admin screenshot holds
+customer names, payout figures and API keys, so a shared screenshot DB would mean per-image
+consent, redaction, moderation and breach liability. A dHash is 8 bytes of gradient signs —
+it cannot be turned back into an image, holds no personal data, and costs nothing to store.
+
+### `js/fingerprint.js` (new, 150 lines)
+- `computeFingerprint(canvas)` → `{v:1, dhash, tiles[4]}`. 9×8 grayscale dHash of the
+  **content region only** (`x:18%, y:8%` crop) — hashing the whole frame would make every
+  admin page look alike, because they share the left nav and top bar. Four quadrant hashes
+  let a differently-cropped screenshot still match.
+- `compareFingerprints(a,b)` → 0–0.95. Deliberately conservative: `≤6 bits → 0.9`,
+  `≤10 → 0.75`, `≤14 → 0.6`, `≤18 with 3+ tile hits → 0.55`, else 0. Tile agreement adds
+  0.05; tile *disagreement* subtracts 0.15, because a hash match with a layout mismatch is
+  usually a coincidence. A wrong "same screen" call is worse than none.
+- `matchFingerprint(entries, fp)` — pending entries damped ×0.85, same as text.
+- Fails soft everywhere: a bad canvas returns `null` and the answer proceeds without it.
+
+### Where it plugs in
+- **Client, static build:** screenshot → fingerprint → if ≥0.75, answer instantly from the
+  playbook with "Recognised this admin screen from the playbook, on your device."
+  **No OCR, no network.** This is the case OCR handles worst — low-res or non-English shots.
+- **Client, Cloudflare build:** fingerprint travels with the image and any local screen
+  matches are sent as `screen_matches`.
+- **Worker:** `rankByFingerprint()` merges screen hits into the text-ranked context (best
+  score per entry wins), and the prompt tells the model a screen match is strong evidence
+  of which page the merchant is on.
+- **Model contract:** new optional `screen_summary` — one line naming the page and the
+  visible problem, explicitly excluding names, emails, order numbers and amounts. Scrubbed
+  by `guard.scrub()` before it is stored or returned.
+- **KV:** `addFingerprint()` appends on create and on merge, skips anything ≥0.9 similar to
+  a stored one, caps at **8 per entry**.
+
+### Tests added (+17 worker, +13 client)
+Hamming maths, identical/near/far screens, the tile-disagreement penalty, pending damping,
+save round-trip, near-duplicate suppression, distinct-screen addition, worker context
+injection, deterministic hashing from a fake canvas, "no image data in the fingerprint"
+(<200 bytes serialised), and the static build answering a screenshot with zero network calls.
+
 ## Static build support (added after the first pass)
 
 GitHub Pages and the offline zip have **no Worker**, so the chat had to degrade instead of
@@ -363,9 +404,9 @@ Pages:Edit + KV:Edit + Workers AI:Read, and delete it in the Cloudflare dashboar
 
 | Command | Count | Covers |
 |---|---|---|
-| `node tools/audit.mjs` | **384 OK**, 1 warn | files exist, DOM ids, thresholds 0.62/0.46/0.85, KV schema fields, guard + disclaimer copy, sw skips `/api/`, bindings declared. Warn = placeholder KV ids. |
-| `node tools/chat-test.mjs` | **57 PASS** | fake KV + fake AI: matcher, pending damping, guard regexes, repair retry, degrade ladder, vision bytes, 415 bad MIME, rate limit at 30, create-vs-merge dedupe, PII scrub, auto-promote at 3, no-KV paths |
-| `node tools/client-test.mjs` | **33 PASS** | real client modules on a fake DOM/fetch/IndexedDB: id wiring, dictionary answers with zero network calls, unknown → Worker, image always → Worker, resolve, bubble rendering, **HTML escaping / XSS**, static-build degrade, consent persistence |
+| `node tools/audit.mjs` | **399 OK**, 1 warn | files exist, DOM ids, thresholds 0.62/0.46/0.85, KV schema fields, guard + disclaimer copy, sw skips `/api/`, bindings declared. Warn = placeholder KV ids. |
+| `node tools/chat-test.mjs` | **74 PASS** | fake KV + fake AI: matcher, pending damping, guard regexes, repair retry, degrade ladder, vision bytes, 415 bad MIME, rate limit at 30, create-vs-merge dedupe, PII scrub, auto-promote at 3, no-KV paths, **fingerprint save/dedupe/context** |
+| `node tools/client-test.mjs` | **46 PASS** | real client modules on a fake DOM/fetch/IndexedDB: id wiring, dictionary answers with zero network calls, unknown → Worker, image always → Worker, resolve, bubble rendering, **HTML escaping / XSS**, static-build degrade, consent persistence, **screen recognition with no network** |
 
 `npm test` runs all three.
 

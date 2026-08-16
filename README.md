@@ -59,7 +59,7 @@ Installed copies also register as an Android **share target** — share error te
 | Tap, Screenshot, typed Ask | yes | yes |
 | Chat — dictionary answers | yes | yes |
 | Chat — AI research | **yes** | no |
-| Chat — screenshot with vision | **yes** | reads it with on-device OCR instead |
+| Chat — screenshot with vision | **yes** | recognises known screens by fingerprint, else on-device OCR |
 | Saving confirmed fixes to AGENT_KV | **yes** | no, kept on your device |
 
 The static build has no Worker behind it. The app detects that on load (`runtime.api`)
@@ -82,6 +82,14 @@ The **Ask** button is fixed bottom-right on every screen (`Cmd/Ctrl + K` also op
 | Text, < 0.46 | Worker + LLM, category context only | `AI researched` |
 | **Any screenshot** | always Worker + vision model (local OCR runs first for context) | `AI researched` |
 | AI unreachable / quota / offline | closest playbook or safe generic checks | `Local tips` |
+
+### Screen fingerprints
+
+Screenshots are never stored. When you confirm a fix that came from a screenshot, the entry
+keeps a **dHash** instead: 8 bytes describing the light/dark gradient of the page content,
+which cannot be turned back into an image and contains no customer data. Next time anyone
+sends a screenshot of that same admin screen, Storescope recognises it — even offline, even
+when OCR cannot read the text. Max 8 fingerprints per entry, near-duplicates skipped.
 
 Tap **This fixed it** and the exchange is saved to `AGENT_KV` as a new entry
 (`section, symptom, tags, diagnosis, fix_steps`, `source: "chat"`, `status: "pending"`).

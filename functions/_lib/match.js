@@ -55,6 +55,7 @@ export function normalizeEntry(raw) {
     tags: raw.tags || [],
     synonyms: raw.synonyms || [],
     match_phrases: raw.match_phrases || [],
+    fingerprints: raw.fingerprints || [],
     status: raw.status || "published",
     source: raw.source || "seed"
   };
@@ -150,6 +151,53 @@ export function rank(entries, query, opts = {}) {
 
   out.sort((a, b) => b.score - a.score);
   return out.slice(0, opts.limit || 8);
+}
+
+/* ---------------------------- screen fingerprints -------------------------- */
+
+const HEX_BITS = { 0:0,1:1,2:1,3:2,4:1,5:2,6:2,7:3,8:1,9:2,a:2,b:3,c:2,d:3,e:3,f:4 };
+
+export function hamming(a, b) {
+  if (!a || !b || a.length !== b.length) return 64;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) {
+    const x = parseInt(a[i], 16) ^ parseInt(b[i], 16);
+    d += HEX_BITS[x.toString(16)] ?? 4;
+  }
+  return d;
+}
+
+/** Mirror of compareFingerprints() in js/fingerprint.js — keep the two in step. */
+export function compareFingerprints(a, b) {
+  if (!a || !b || !a.dhash || !b.dhash) return 0;
+  const d = hamming(a.dhash, b.dhash);
+  const tileHits = (a.tiles || []).reduce((n, t, i) => n + (hamming(t, (b.tiles || [])[i]) <= 10 ? 1 : 0), 0);
+  let score = 0;
+  if (d <= 6) score = 0.9;
+  else if (d <= 10) score = 0.75;
+  else if (d <= 14) score = 0.6;
+  else if (d <= 18 && tileHits >= 3) score = 0.55;
+  else return 0;
+  if (tileHits >= 3) score += 0.05;
+  else if (tileHits <= 1) score -= 0.15;
+  return Math.max(0, Math.min(0.95, Number(score.toFixed(3))));
+}
+
+/** Entries whose stored fingerprints look like the same admin screen. */
+export function rankByFingerprint(entries, fp, limit = 3) {
+  if (!fp) return [];
+  const out = [];
+  for (const raw of entries) {
+    const entry = normalizeEntry(raw);
+    let best = 0;
+    for (const stored of entry.fingerprints || []) {
+      const s = compareFingerprints(fp, stored);
+      if (s > best) best = s;
+    }
+    if (best > 0) out.push({ entry, score: entry.status === "pending" ? best * 0.85 : best, via: "screen" });
+  }
+  out.sort((a, b) => b.score - a.score);
+  return out.slice(0, limit);
 }
 
 export function slugify(text, words = 6) {

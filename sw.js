@@ -1,4 +1,4 @@
-const VERSION = "storescope-v1.3.0";
+const VERSION = "storescope-v1.4.0";
 const PRECACHE = [
   "./",
   "./index.html",
@@ -14,6 +14,7 @@ const PRECACHE = [
   "./js/chat-ui.js",
   "./js/chat-voice.js",
   "./js/consent.js",
+  "./js/fingerprint.js",
   "./js/vendor/fuse.min.js",
   "./data/payments.json",
   "./data/shipping.json",

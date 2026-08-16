@@ -29,7 +29,8 @@ CONTEXT RULES:
 OUTPUT — return ONLY minified JSON, no prose, no markdown fences:
 {"section":"payments|shipping|general","symptom":"short title, max 70 chars",
 "diagnosis":"2-4 plain sentences on why this happens","fix_steps":["step 1","step 2","step 3"],
-"tags":["3-6","lowercase","keywords"],"target_ui_hint":"Settings > Payments","confidence":0.0-1.0}`;
+"tags":["3-6","lowercase","keywords"],"target_ui_hint":"Settings > Payments","confidence":0.0-1.0,
+"screen_summary":"only when a screenshot was attached: one line naming the page and the visible problem, no personal data"}`;
 
 const ACTION_CLAIM =
   /\b(?:i(?:'ve| have| had)?|we(?:'ve| have)?)\s+(?:just\s+|now\s+|already\s+)?(?:updated|changed|enabled|disabled|turned\s+(?:on|off)|fixed|refunded|cancelled|canceled|connected|configured|set(?:\s+up)?|added|removed|deleted|created|activated|deactivated|reset|adjusted|corrected|resolved)\b/i;
@@ -117,6 +118,10 @@ export function validateAnswer(obj) {
   let confidence = Number(obj.confidence);
   if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) confidence = 0.6;
 
+  const screenSummary = obj.screen_summary
+    ? scrub(String(obj.screen_summary)).slice(0, 160)
+    : null;
+
   return {
     ok: true,
     value: {
@@ -124,6 +129,7 @@ export function validateAnswer(obj) {
       symptom,
       diagnosis,
       fix_steps,
+      ...(screenSummary ? { screen_summary: screenSummary } : {}),
       tags: tags.length ? tags : [section],
       target_ui_hint: String(obj.target_ui_hint || "Shopify admin").slice(0, 60),
       confidence: Number(confidence.toFixed(2))

@@ -59,6 +59,7 @@ export function normalizeEntry(raw) {
     tags: raw.tags || [],
     synonyms: raw.synonyms || [],
     match_phrases: raw.match_phrases || [],
+    fingerprints: raw.fingerprints || [],
     arrow: raw.arrow || { x: 0.5, y: 0.12 },
     status: raw.status || "published",
     source: raw.source || "seed"
